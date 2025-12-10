@@ -43,8 +43,12 @@ class ServiceManager:
         for factory in factories:
             try:
                 self.register_factory(factory)
-            except Exception:  # noqa: BLE001
-                logger.exception(f"Error initializing {factory}")
+            except ImportError as e:
+                # Expected for optional dependencies
+                logger.debug(f"Optional dependency not available: {e}")
+            except Exception as e:  # noqa: BLE001
+                # Only log unexpected errors at warning level
+                logger.warning(f"Failed to initialize {factory.__class__.__name__}: {str(e)}")
         self.set_factory_registered()
 
     def are_factories_registered(self) -> bool:
@@ -153,10 +157,11 @@ class ServiceManager:
                         factories.append(obj())
                         break
 
-            except Exception as exc:  # noqa: BLE001
-                logger.debug(
-                    f"Could not initialize services. Please check your settings. Error in {name}.", exc_info=exc
-                )
+            except Exception:  # noqa: BLE001, S110
+                # This is expected during initial service discovery - some services
+                # may not have factories yet or depend on settings service being ready first
+                # Intentionally suppressed to avoid startup noise - not an error condition
+                pass
 
         return factories
 
