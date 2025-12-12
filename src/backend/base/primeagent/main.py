@@ -123,18 +123,16 @@ def warn_about_future_cors_changes(settings):
 
     if using_defaults:
         logger.warning(
-            "DEPRECATION NOTICE: Starting in v2.0, CORS will be more restrictive by default. "
-            "Current behavior allows all origins (*) with credentials enabled. "
-            "Consider setting PRIMEAGENT_CORS_ORIGINS for production deployments. "
-            "See documentation for secure CORS configuration."
+            "NOTE: In v2.0, CORS will be more restrictive. "
+            "Set PRIMEAGENT_CORS_ORIGINS for production. "
+            "See docs for secure CORS setup."
         )
 
     # Additional warning for potentially insecure configuration
     if settings.cors_origins == "*" and settings.cors_allow_credentials:
         logger.warning(
-            "SECURITY NOTICE: Current CORS configuration allows all origins with credentials. "
-            "In v2.0, credentials will be automatically disabled when using wildcard origins. "
-            "Specify exact origins in PRIMEAGENT_CORS_ORIGINS to use credentials securely."
+            "SECURITY: Wildcard origins with credentials are insecure. "
+            "Specify exact origins in PRIMEAGENT_CORS_ORIGINS for secure credential usage."
         )
 
 

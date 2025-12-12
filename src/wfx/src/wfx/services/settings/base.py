@@ -433,10 +433,9 @@ class Settings(BaseSettings):
             msg = f"Invalid database_url provided: '{value}'"
             raise ValueError(msg)
 
-        logger.debug("No database_url provided, trying PRIMEAGENT_DATABASE_URL env variable")
         if primeagent_database_url := os.getenv("PRIMEAGENT_DATABASE_URL"):
             value = primeagent_database_url
-            logger.debug("Using PRIMEAGENT_DATABASE_URL env variable.")
+            logger.debug("Using PRIMEAGENT_DATABASE_URL env variable")
         else:
             logger.debug("No database_url env variable, using sqlite database")
             # Originally, we used sqlite:///./primeagent.db
@@ -454,10 +453,8 @@ class Settings(BaseSettings):
 
             if info.data["save_db_in_config_dir"]:
                 database_dir = info.data["config_dir"]
-                logger.debug(f"Saving database to config_dir: {database_dir}")
             else:
                 database_dir = Path(__file__).parent.parent.parent.resolve()
-                logger.debug(f"Saving database to primeagent directory: {database_dir}")
 
             pre_db_file_name = "primeagent-pre.db"
             db_file_name = "primeagent.db"
@@ -469,24 +466,16 @@ class Settings(BaseSettings):
                     final_path = new_pre_path
                 elif Path(new_path).exists() and info.data["save_db_in_config_dir"]:
                     # We need to copy the current db to the new location
-                    logger.debug("Copying existing database to new location")
                     copy2(new_path, new_pre_path)
-                    logger.debug(f"Copied existing database to {new_pre_path}")
                 elif Path(f"./{db_file_name}").exists() and info.data["save_db_in_config_dir"]:
-                    logger.debug("Copying existing database to new location")
                     copy2(f"./{db_file_name}", new_pre_path)
-                    logger.debug(f"Copied existing database to {new_pre_path}")
                 else:
-                    logger.debug(f"Creating new database at {new_pre_path}")
                     final_path = new_pre_path
             elif Path(new_path).exists():
-                logger.debug(f"Database already exists at {new_path}, using it")
                 final_path = new_path
             elif Path(f"./{db_file_name}").exists():
                 try:
-                    logger.debug("Copying existing database to new location")
                     copy2(f"./{db_file_name}", new_path)
-                    logger.debug(f"Copied existing database to {new_path}")
                 except OSError:
                     logger.exception("Failed to copy database, using default path")
                     new_path = f"./{db_file_name}"
@@ -517,22 +506,17 @@ class Settings(BaseSettings):
                     for path in primeagent_component_path:
                         if path not in value:
                             value.append(path)
-                    logger.debug(f"Extending {primeagent_component_path} to components_path")
                 elif primeagent_component_path not in value:
                     value.append(primeagent_component_path)
-                    logger.debug(f"Appending {primeagent_component_path} to components_path")
 
         if not value:
             value = [BASE_COMPONENTS_PATH]
-            logger.debug("Setting default components path to components_path")
         else:
             if isinstance(value, Path):
                 value = [str(value)]
             elif isinstance(value, list):
                 value = [str(p) if isinstance(p, Path) else p for p in value]
-            logger.debug("Adding default components path to components_path")
 
-        logger.debug(f"Components path: {value}")
         return value
 
     model_config = SettingsConfigDict(validate_assignment=True, extra="ignore", env_prefix="PRIMEAGENT_")
@@ -543,7 +527,6 @@ class Settings(BaseSettings):
         self.dev = dev
 
     def update_settings(self, **kwargs) -> None:
-        logger.debug("Updating settings")
         for key, value in kwargs.items():
             # value may contain sensitive information, so we don't want to log it
             if not hasattr(self, key):
@@ -565,12 +548,9 @@ class Settings(BaseSettings):
                     value_ = str(value_) if isinstance(value_, Path) else value_
                     if value_ not in getattr(self, key):
                         getattr(self, key).append(value_)
-                        logger.debug(f"Appended {key}")
 
             else:
                 setattr(self, key, value)
-                logger.debug(f"Updated {key}")
-            logger.debug(f"{key}: {getattr(self, key)}")
 
     @property
     def voice_mode_available(self) -> bool:
@@ -619,6 +599,5 @@ async def load_settings_from_yaml(file_path: str) -> Settings:
             if key not in Settings.model_fields:
                 msg = f"Key {key} not found in settings"
                 raise KeyError(msg)
-            await logger.adebug(f"Loading {len(settings_dict[key])} {key} from {file_path}")
 
     return await asyncio.to_thread(Settings, **settings_dict)
