@@ -1,5 +1,5 @@
 .PHONY: all init format_backend format lint build run_backend backend dev help tests coverage clean_python_cache clean_npm_cache clean_frontend_build clean_all run_clic run_cli run_cli_debug \
-	load_test_setup load_test_setup_basic load_test_list_flows load_test_run load_test_primeagent_quick load_test_wfx_quick load_test_quick load_test_stress load_test_example load_test_clean load_test_remote_setup load_test_remote_run load_test_help
+	load_test_setup load_test_setup_basic load_test_list_flows load_test_run load_test_primeagent_quick load_test_aiexec_quick load_test_wfx_quick load_test_quick load_test_stress load_test_example load_test_clean load_test_remote_setup load_test_remote_run load_test_help
 
 # Configurations
 VERSION=$(shell grep "^version" pyproject.toml | sed 's/.*\"\(.*\)\"$$/\1/')
