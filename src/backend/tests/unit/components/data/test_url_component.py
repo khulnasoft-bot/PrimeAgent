@@ -4,7 +4,7 @@ import pytest
 from wfx.components.data import URLComponent
 from wfx.schema import DataFrame
 
-from tests.base import ComponentTestBaseWithoutClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient
 
 
 class TestURLComponent(ComponentTestBaseWithoutClient):

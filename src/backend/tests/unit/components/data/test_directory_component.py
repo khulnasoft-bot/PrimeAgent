@@ -6,7 +6,7 @@ import pytest
 from wfx.components.data import DirectoryComponent
 from wfx.schema import Data, DataFrame
 
-from tests.base import ComponentTestBaseWithoutClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient
 
 
 class TestDirectoryComponent(ComponentTestBaseWithoutClient):

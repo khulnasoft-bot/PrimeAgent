@@ -4,7 +4,7 @@ from wfx.components.input_output import ChatInput, TextInputComponent
 from wfx.schema.message import Message
 from wfx.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_USER, MESSAGE_SENDER_USER
 
-from tests.base import ComponentTestBaseWithClient, ComponentTestBaseWithoutClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithClient, ComponentTestBaseWithoutClient
 
 
 @pytest.mark.usefixtures("client")

@@ -5,7 +5,7 @@ import pytest
 from wfx.components.chroma import ChromaVectorStoreComponent
 from wfx.schema.data import Data
 
-from tests.base import ComponentTestBaseWithoutClient, VersionComponentMapping, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient, VersionComponentMapping
 
 
 @pytest.mark.api_key_required

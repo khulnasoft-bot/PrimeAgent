@@ -5,12 +5,12 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
+from requests.exceptions import HTTPError
 from typing_extensions import TypedDict
 from wfx.custom.custom_component.component import Component
 
 from tests.constants import SUPPORTED_VERSIONS
 from tests.integration.utils import build_component_instance_for_tests
-from requests.exceptions import HTTPError
 
 
 class VersionComponentMapping(TypedDict):
@@ -131,8 +131,7 @@ class ComponentTestBase:
             # running tests offline or before a tag exists), skip this specific
             # version rather than failing the whole test suite.
             pytest.skip(
-                "Skipping version "
-                f"{version} for {self.__class__.__name__}: remote component not available ({e})"
+                f"Skipping version {version} for {self.__class__.__name__}: remote component not available ({e})"
             )
         except Exception as e:
             msg = (

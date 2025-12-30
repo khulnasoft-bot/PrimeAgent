@@ -8,7 +8,7 @@ from pymongo.collection import Collection
 from wfx.components.mongodb import MongoVectorStoreComponent
 from wfx.schema.data import Data
 
-from tests.base import ComponentTestBaseWithoutClient, VersionComponentMapping, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient, VersionComponentMapping
 
 
 @pytest.mark.skipif(

@@ -1,7 +1,7 @@
 import pytest
 from wfx.components.input_output import TextOutputComponent
 
-from tests.base import ComponentTestBaseWithoutClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient
 
 
 class TestTextOutputComponent(ComponentTestBaseWithoutClient):

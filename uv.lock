@@ -8873,7 +8873,7 @@ dev = [
 
 [[package]]
 name = "primeagent-base"
-version = "0.6.4"
+version = "0.1.0"
 source = { editable = "src/backend/base" }
 dependencies = [
     { name = "aiofile" },

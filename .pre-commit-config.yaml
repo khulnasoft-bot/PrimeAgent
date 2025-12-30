@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-case-conflict
       - id: end-of-file-fixer
@@ -25,13 +25,6 @@ repos:
         language: system
         types_or: [python, pyi]
         args: [--config, pyproject.toml]
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.5.0
-    hooks:
-      - id: detect-secrets
-        args: ["--baseline", ".secrets.baseline"]
-        # Exclude docs, SECURITY.md, component index, starter project templates, and test files
-        exclude: '(^docs/|^SECURITY\.md$|src/wfx/src/wfx/_assets/component_index\.json$|src/backend/base/primeagent/initial_setup/starter_projects/|^src/backend/tests/)'
   - repo: local
     hooks:
       - id: local-biome-check

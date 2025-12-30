@@ -5,7 +5,7 @@ from wfx.schema.dataframe import DataFrame
 from wfx.schema.message import Message
 from wfx.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI
 
-from tests.base import ComponentTestBaseWithClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithClient
 
 
 @pytest.mark.usefixtures("client")

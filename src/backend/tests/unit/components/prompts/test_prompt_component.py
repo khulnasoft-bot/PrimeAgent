@@ -1,7 +1,7 @@
 import pytest
 from wfx.components.processing import PromptComponent
 
-from tests.base import ComponentTestBaseWithClient, DID_NOT_EXIST
+from tests.base import DID_NOT_EXIST, ComponentTestBaseWithClient
 
 
 @pytest.mark.usefixtures("client")

@@ -1,7 +1,7 @@
 import { Cookies } from "react-cookie";
 import {
-  PRIMEAGENT_AUTO_LOGIN_OPTION,
   IS_AUTO_LOGIN,
+  PRIMEAGENT_AUTO_LOGIN_OPTION,
 } from "@/constants/constants";
 import useAuthStore from "@/stores/authStore";
 import useFlowStore from "@/stores/flowStore";

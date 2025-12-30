@@ -32,10 +32,10 @@ import { customDownloadFlow } from "@/customization/utils/custom-reactFlowUtils"
 import useFlowStore from "@/stores/flowStore";
 import getFieldTitle from "../CustomNodes/utils/get-field-title";
 import {
-  PRIMEAGENT_SUPPORTED_TYPES,
   INPUT_TYPES,
   IS_MAC,
   OUTPUT_TYPES,
+  PRIMEAGENT_SUPPORTED_TYPES,
   SUCCESS_BUILD,
   specialCharsRegex,
 } from "../constants/constants";
