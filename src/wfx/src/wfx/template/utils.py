@@ -19,18 +19,16 @@ def get_file_path_value(file_path):
     except TypeError:
         return ""
 
-    # Normalize and check for safety
-    cache_dir = Path(user_cache_dir("primeagent", "primeagent")).resolve()
-    try:
-        resolved_path = path.resolve()
-    except (OSError, RuntimeError):
+    # Check for safety
+    # If the path is not in the cache dir, return empty string
+    # This is to prevent access to files outside the cache dir
+    # If the path is not a file, return empty string
+    if not str(path).startswith(user_cache_dir("primeagent", "primeagent")):
         return ""
 
-    if not str(resolved_path).startswith(str(cache_dir)):
+    if not path.exists():
         return ""
-    if not resolved_path.exists():
-        return ""
-    return str(resolved_path)
+    return file_path
 
 
 def update_template_field(new_template, key, previous_value_dict) -> None:
