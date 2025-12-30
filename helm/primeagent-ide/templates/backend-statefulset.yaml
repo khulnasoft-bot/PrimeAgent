@@ -87,11 +87,11 @@ spec:
             httpGet:
               path: /health
               port: http
-              
+
             initialDelaySeconds: {{ .Values.primeagent.backend.probe.initialDelaySeconds }}
             periodSeconds: {{ .Values.primeagent.backend.probe.periodSeconds }}
             timeoutSeconds: {{ .Values.primeagent.backend.probe.timeoutSeconds }}
-            failureThreshold: {{ .Values.primeagent.backend.probe.failureThreshold }}   
+            failureThreshold: {{ .Values.primeagent.backend.probe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /health
@@ -99,7 +99,7 @@ spec:
             initialDelaySeconds: {{ .Values.primeagent.backend.probe.initialDelaySeconds }}
             periodSeconds: {{ .Values.primeagent.backend.probe.periodSeconds }}
             timeoutSeconds: {{ .Values.primeagent.backend.probe.timeoutSeconds }}
-            failureThreshold: {{ .Values.primeagent.backend.probe.failureThreshold }}   
+            failureThreshold: {{ .Values.primeagent.backend.probe.failureThreshold }}
           env:
             - name: PRIMEAGENT_BACKEND_ONLY
               value: "{{ .Values.primeagent.backend.backendOnly }}"
@@ -169,5 +169,5 @@ spec:
       {{- else }}
       storageClassName: "{{ template "primeagent.fullname" . }}-sqlite"
       {{- end }}
-      
+
   {{- end }}

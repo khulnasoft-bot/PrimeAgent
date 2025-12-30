@@ -84,7 +84,7 @@ spec:
             initialDelaySeconds: {{ .Values.primeagent.frontend.probe.initialDelaySeconds }}
             periodSeconds: {{ .Values.primeagent.frontend.probe.periodSeconds }}
             timeoutSeconds: {{ .Values.primeagent.frontend.probe.timeoutSeconds }}
-            failureThreshold: {{ .Values.primeagent.frontend.probe.failureThreshold }}   
+            failureThreshold: {{ .Values.primeagent.frontend.probe.failureThreshold }}
           readinessProbe:
             httpGet:
               path: /index.html
@@ -92,7 +92,7 @@ spec:
             initialDelaySeconds: {{ .Values.primeagent.frontend.probe.initialDelaySeconds }}
             periodSeconds: {{ .Values.primeagent.frontend.probe.periodSeconds }}
             timeoutSeconds: {{ .Values.primeagent.frontend.probe.timeoutSeconds }}
-            failureThreshold: {{ .Values.primeagent.frontend.probe.failureThreshold }}   
+            failureThreshold: {{ .Values.primeagent.frontend.probe.failureThreshold }}
           env:
             - name: BACKEND_URL
               value: "http://{{ template "primeagent.fullname" . }}-backend.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.primeagent.backend.service.port }}"

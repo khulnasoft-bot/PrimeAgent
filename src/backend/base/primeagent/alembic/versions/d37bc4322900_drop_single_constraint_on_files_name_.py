@@ -45,7 +45,7 @@ def upgrade() -> None:
             cols = [row[1] for row in res]
             expected = ["id", "user_id", "name", "path", "size", "provider", "created_at", "updated_at"]
             if set(cols) != set(expected):
-                error_msg = "SQLite: Unexpected columns on file table: {}. Aborting migration to avoid data loss.".format(cols)
+                error_msg = f"SQLite: Unexpected columns on file table: {cols}. Aborting migration to avoid data loss."
                 raise RuntimeError(error_msg)
 
             # Create the new table without the single UNIQUE(name) constraint
