@@ -2,8 +2,8 @@ from wfx.components.crewai.crewai import CrewAIAgentComponent
 from wfx.components.crewai.hierarchical_crew import HierarchicalCrewComponent
 from wfx.components.crewai.hierarchical_task import HierarchicalTaskComponent
 from wfx.components.input_output import ChatInput, ChatOutput
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import PromptComponent
 from wfx.components.tools import SearchAPIComponent
 from wfx.graph import Graph
 

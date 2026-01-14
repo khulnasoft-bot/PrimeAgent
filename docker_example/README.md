@@ -12,7 +12,7 @@ This guide will help you get PrimeAgent up and running using Docker and Docker C
 1. Clone the PrimeAgent repository:
 
    ```sh
-   git clone https://github.com/khulnasoft/primeagent.git
+   git clone https://github.com/khulnasoft-bot/primeagent.git
    ```
 
 2. Navigate to the `docker_example` directory:

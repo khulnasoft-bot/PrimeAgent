@@ -7,7 +7,7 @@ import {
 import { customDefaultShortcuts } from "../customization/constants";
 import type { languageMap } from "../types/components";
 
-const getEnvVar = (key: string, defaultValue: any = undefined) => {
+const getEnvVar = (key: string, defaultValue: unknown = undefined) => {
   if (typeof process !== "undefined" && process.env) {
     return process.env[key] ?? defaultValue;
   }
@@ -171,6 +171,9 @@ export const CODE_DICT_DIALOG_SUBTITLE =
  */
 export const PROMPT_DIALOG_SUBTITLE =
   "Create your prompt. Prompts can help guide the behavior of a Language Model. Use curly brackets {} to introduce variables.";
+
+export const MUSTACHE_PROMPT_DIALOG_SUBTITLE =
+  "Create your prompt. Prompts can help guide the behavior of a Language Model. Use double curly brackets {{}} to introduce variables.";
 
 export const CHAT_CANNOT_OPEN_TITLE = "Chat Cannot Open";
 
@@ -673,6 +676,7 @@ export const PRIMEAGENT_SUPPORTED_TYPES = new Set([
   "float",
   "code",
   "prompt",
+  "mustache",
   "file",
   "int",
   "dict",
@@ -882,10 +886,9 @@ export const DRAG_EVENTS_CUSTOM_TYPESS = {
   "text/plain": "text/plain",
 };
 
-export const NOTE_NODE_MIN_WIDTH = 324;
-export const NOTE_NODE_MIN_HEIGHT = 324;
-export const NOTE_NODE_MAX_HEIGHT = 800;
-export const NOTE_NODE_MAX_WIDTH = 1000;
+export const NOTE_NODE_MIN_WIDTH = 260;
+export const NOTE_NODE_MIN_HEIGHT = 100;
+export const DEFAULT_NOTE_SIZE = 324;
 
 export const COLOR_OPTIONS = {
   amber: "hsl(var(--note-amber))",
@@ -981,13 +984,23 @@ export const DEFAULT_POLLING_INTERVAL = 5000;
 export const DEFAULT_TIMEOUT = 30000;
 export const DEFAULT_FILE_PICKER_TIMEOUT = 60000;
 export const DISCORD_URL = "https://discord.com/invite/EqksyE2EX9";
-export const GITHUB_URL = "https://github.com/primeagent-ai/primeagent";
+export const GITHUB_URL = "https://github.com/khulnasoft-bot/primeagent";
 export const TWITTER_URL = "https://x.com/primeagent_ai";
-export const DOCS_URL = "https://primeagent-docs.khulnasoft.com";
+export const DOCS_URL = "https://docs-primeagent.khulnasoft.com";
 export const DATASTAX_DOCS_URL =
   "https://docs.datastax.com/en/primeagent/index.html";
-export const DESKTOP_URL = "https://www.primeagent.org/desktop";
+export const DESKTOP_URL = "https://www.primeagent.khulnasoft.com/desktop";
 export const BUG_REPORT_URL =
-  "https://github.com/primeagent-ai/primeagent/issues";
+  "https://github.com/khulnasoft-bot/primeagent/issues";
 
 export const UUID_PARSING_ERROR = "uuid_parsing";
+
+// Variable categories
+export const CATEGORY_GLOBAL = "Global";
+export const CATEGORY_LLM = "LLM";
+export const CATEGORY_SETTINGS = "Settings";
+export const VALID_CATEGORIES = [
+  CATEGORY_GLOBAL,
+  CATEGORY_LLM,
+  CATEGORY_SETTINGS,
+] as const;

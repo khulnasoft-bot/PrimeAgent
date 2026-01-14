@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import AlertDropdown from "@/alerts/alertDropDown";
-import DataStaxLogo from "@/assets/DataStaxLogo.svg?react";
 import PrimeagentLogo from "@/assets/PrimeagentLogo.svg?react";
+import { AssistantButton } from "@/components/common/assistant";
 import ForwardedIconComponent from "@/components/common/genericIconComponent";
+import ModelProviderCount from "@/components/common/modelProviderCountComponent";
 import ShadTooltip from "@/components/common/shadTooltipComponent";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CustomAccountMenu from "@/customization/components/custom-AccountMenu";
-import { CustomOrgSelector } from "@/customization/components/custom-org-selector";
 import CustomPrimeagentCounts from "@/customization/components/custom-primeagent-counts";
-import { CustomProductSelector } from "@/customization/components/custom-product-selector";
-import { ENABLE_DATASTAX_PRIMEAGENT } from "@/customization/feature-flags";
+import { CustomOrgSelector } from "@/customization/components/custom-org-selector";
+import { PRIMEAGENT_AGENTIC_EXPERIENCE } from "@/customization/feature-flags";
 import { useCustomNavigate } from "@/customization/hooks/use-custom-navigate";
 import useTheme from "@/customization/hooks/use-custom-theme";
 import useAlertStore from "@/stores/alertStore";
@@ -65,18 +65,9 @@ export default function AppHeader(): JSX.Element {
           className="mr-1 flex h-8 w-8 items-center"
           data-testid="icon-ChevronLeft"
         >
-          {ENABLE_DATASTAX_PRIMEAGENT ? (
-            <DataStaxLogo className="fill-black dark:fill-[white]" />
-          ) : (
-            <PrimeagentLogo className="h-5 w-5" />
-          )}
+          <PrimeagentLogo className="h-5 w-5" />
         </Button>
-        {ENABLE_DATASTAX_PRIMEAGENT && (
-          <>
-            <CustomOrgSelector />
-            <CustomProductSelector />
-          </>
-        )}
+        <CustomOrgSelector />
       </div>
 
       {/* Middle Section */}
@@ -89,14 +80,11 @@ export default function AppHeader(): JSX.Element {
         className={`relative left-3 z-30 flex shrink-0 items-center gap-3`}
         data-testid="header_right_section_wrapper"
       >
-        <>
-          <Button
-            unstyled
-            className="hidden items-center whitespace-nowrap pr-2 lg:inline"
-          >
-            <CustomPrimeagentCounts />
-          </Button>
-        </>
+        {false && <ModelProviderCount />}
+        {PRIMEAGENT_AGENTIC_EXPERIENCE && <AssistantButton type="header" />}
+        <div className="hidden pr-2 whitespace-nowrap lg:inline-flex lg:items-center">
+          <CustomPrimeagentCounts />
+        </div>
         <AlertDropdown
           notificationRef={notificationContentRef}
           onClose={() => setActiveState(null)}

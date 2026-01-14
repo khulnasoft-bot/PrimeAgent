@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-
 from wfx.custom.custom_component.component import Component
 from wfx.events.event_manager import EventManager
 from wfx.schema.content_block import ContentBlock

@@ -1,4 +1,4 @@
-from wfx.components.processing import DynamicCreateDataComponent
+from wfx.components.processing.dynamic_create_data import DynamicCreateDataComponent
 from wfx.schema.data import Data
 from wfx.schema.message import Message
 

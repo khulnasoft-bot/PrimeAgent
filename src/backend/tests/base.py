@@ -5,9 +5,8 @@ from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
-from requests.exceptions import HTTPError
-from typing_extensions import TypedDict
 from wfx.custom.custom_component.component import Component
+from typing_extensions import TypedDict
 
 from tests.constants import SUPPORTED_VERSIONS
 from tests.integration.utils import build_component_instance_for_tests
@@ -125,13 +124,6 @@ class ComponentTestBase:
         try:
             instance, component_code = build_component_instance_for_tests(
                 version, file_name=mapping["file_name"], module=mapping["module"], **default_kwargs
-            )
-        except HTTPError as e:
-            # When historical component source cannot be fetched from GitHub (e.g.
-            # running tests offline or before a tag exists), skip this specific
-            # version rather than failing the whole test suite.
-            pytest.skip(
-                f"Skipping version {version} for {self.__class__.__name__}: remote component not available ({e})"
             )
         except Exception as e:
             msg = (

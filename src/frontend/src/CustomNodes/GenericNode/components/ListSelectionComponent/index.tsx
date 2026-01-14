@@ -10,14 +10,23 @@ import { cn, testIdCase } from "@/utils/utils";
 import ListItem from "./ListItem";
 
 // Update interface with better types
+type GenericItemType = {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  metaData?: string;
+  link?: string;
+};
+
 interface ListSelectionComponentProps {
   open: boolean;
   onClose: () => void;
-  options: any[];
-  setSelectedList: (action: any[]) => void;
-  selectedList: any[];
+  options: GenericItemType[];
+  setSelectedList: (action: GenericItemType[]) => void;
+  selectedList: GenericItemType[];
   searchCategories?: string[];
-  onSelection?: (action: any) => void;
+  onSelection?: (action: GenericItemType) => void;
   limit?: number;
   headerSearchPlaceholder?: string;
   addButtonText?: string;
@@ -37,10 +46,10 @@ const ListSelectionComponent = ({
   addButtonText,
   onAddButtonClick,
   ...baseInputProps
-}: InputProps<any, ListSelectionComponentProps>) => {
+}: InputProps<GenericItemType[], ListSelectionComponentProps>) => {
   const { nodeClass } = baseInputProps;
   const [search, setSearch] = useState("");
-  const [hoveredItem, setHoveredItem] = useState<any | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<GenericItemType | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [isKeyboardNavActive, setIsKeyboardNavActive] = useState(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
@@ -56,7 +65,7 @@ const ListSelectionComponent = ({
   }, [options, search]);
 
   const handleSelectAction = useCallback(
-    (action: any) => {
+    (action: GenericItemType) => {
       if (limit !== 1) {
         // Multiple selection mode
         const isAlreadySelected = selectedList.some(
@@ -77,13 +86,7 @@ const ListSelectionComponent = ({
         }
       } else {
         // Single selection mode
-        setSelectedList([
-          {
-            name: action.name,
-            icon: "icon" in action ? action.icon : undefined,
-            link: "link" in action ? action.link : undefined,
-          },
-        ]);
+        setSelectedList([action]);
         onClose();
       }
     },

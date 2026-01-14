@@ -115,7 +115,7 @@ If it detects a supported environment variable, then it automatically adopts the
     PRIMEAGENT_WORKERS=3
     ```
 
-    For additional examples, see [`.env.example`](https://github.com/khulnasoft/primeagent/blob/main/.env.example) in the Primeagent repository.
+    For additional examples, see [`.env.example`](https://github.com/khulnasoft-bot/primeagent/blob/main/.env.example) in the Primeagent repository.
 
     </details>
 
@@ -352,9 +352,9 @@ To make environment variables available to GUI apps on macOS, you need to use `l
          <string>/bin/sh</string>
          <string>-c</string>
           <string>
-            launchctl setenv PRIMEAGENT_CONFIG_DIR /Users/your_user/custom/config &&
-            launchctl setenv PRIMEAGENT_PORT 7860 &&
-            launchctl setenv PRIMEAGENT_HOST localhost &&
+            launchctl setenv PRIMEAGENT_CONFIG_DIR /Users/your_user/custom/config ;
+            launchctl setenv PRIMEAGENT_PORT 7860 ;
+            launchctl setenv PRIMEAGENT_HOST localhost ;
             launchctl setenv ARIZE_API_KEY ak-...
           </string>
        </array>
@@ -366,7 +366,7 @@ To make environment variables available to GUI apps on macOS, you need to use `l
 4. Load the file with `launchctl`:
 
     ```bash
-    launchctl load ~/Library/LaunchAgents/dev.primeagent.env.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/dev.primeagent.env.plist
     ```
 
 </TabItem>
@@ -403,7 +403,7 @@ To define environment variables for Windows using PowerShell, do the following:
     [System.Environment]::SetEnvironmentVariable("PRIMEAGENT_CONFIG_DIR", "C:\Users\your_user\.primeagent_config", "User")
     ```
 
-   To set an environment variable for all users (you must have Administrator privileges):
+   To set an environment variable for all users (you must have Administrator priveleges):
    ```powershell
    [System.Environment]::SetEnvironmentVariable("PRIMEAGENT_CONFIG_DIR", "C:\Primeagent\Config", "Machine")
    ```
@@ -456,12 +456,15 @@ The following environment variables set base Primeagent server configuration, su
 | `PRIMEAGENT_SSL_KEY_FILE` | String | Not set | Path to the SSL key file for enabling HTTPS on the Primeagent web server. This is separate from [database SSL connections](/configuration-custom-database#connect-primeagent-to-a-local-postgresql-database). |
 | `PRIMEAGENT_DEACTIVATE_TRACING` | Boolean | `False` | Deactivate tracing functionality. |
 | `PRIMEAGENT_CELERY_ENABLED` | Boolean | `False` | Enable Celery for distributed task processing. |
+| `PRIMEAGENT_ALEMBIC_LOG_TO_STDOUT` | Boolean | `False` | Whether to log Alembic database migration output to stdout instead of a log file. If `true`, Alembic logs to `stdout` and the default log file is ignored. |
 
 For more information about deploying Primeagent servers, see [Primeagent deployment overview](/deployment-overview).
 
 ### Storage
 
-See [Memory management options](/memory) and [Manage files](/concepts-file-management).
+For file storage environment variables, see [File storage environment variables](/concepts-file-management#file-storage-environment-variables).
+
+For database environment variables, including PostgreSQL configuration, see [Memory management options](/memory#configure-external-memory).
 
 ### Telemetry
 

@@ -1,7 +1,7 @@
-from wfx.components.helpers.memory import MemoryComponent
+from wfx.components.helpers import MemoryComponent
 from wfx.components.input_output import ChatInput, ChatOutput
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import PromptComponent
 from wfx.components.processing.converter import TypeConverterComponent
 from wfx.graph import Graph
 

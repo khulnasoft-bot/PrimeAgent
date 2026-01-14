@@ -35,7 +35,7 @@ test(
     await page.getByTestId("sidebar-search-input").fill("url");
 
     await page
-      .getByTestId("dataURL")
+      .getByTestId("data_sourceURL")
       .dragTo(page.locator('//*[@id="react-flow-id"]'), {
         targetPosition: { x: 50, y: 300 },
       });
@@ -121,7 +121,7 @@ import time
 class CustomComponent(Component):
     display_name = "Custom Component"
     description = "Use as a template to create your own component."
-    documentation: str = "https://primeagent-docs.khulnasoft.com/components-custom-components"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/components-custom-components"
     icon = "custom_components"
     name = "CustomComponent"
 

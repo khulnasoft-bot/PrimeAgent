@@ -1,7 +1,6 @@
 import copy
 
 import pytest
-
 from wfx.graph.graph import utils
 
 
@@ -75,7 +74,7 @@ def test_sort_up_to_vertex_n_is_start(graph):
     vertex_id = "N"
 
     result = utils.sort_up_to_vertex(graph, vertex_id, is_start=True)
-    # Result should be all the vertices
+    # Result shoud be all the vertices
     assert set(result) == set(graph.keys())
 
 
@@ -755,7 +754,7 @@ def test_get_sorted_vertices_with_stop_at_chroma(graph_with_loop):
     assert "Playlist Extractor" in first_layer, "Input vertex 'Playlist Extractor' should be in first layer"
 
     assert len(first_layer) == 2, (
-        f"First layer should contain exactly 2 vertices, got {len(first_layer)}: {first_layer}"
+        f"First layer should contain exactly 4 vertices, got {len(first_layer)}: {first_layer}"
     )
 
     # Verify that the remaining layers contain the rest of the vertices in the correct order

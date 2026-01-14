@@ -1,7 +1,7 @@
 import pytest
-from wfx.components.helpers import OutputParserComponent
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import PromptComponent
+from wfx.components.processing import OutputParserComponent
 
 from tests.integration.utils import ComponentInputHandle, run_single_component
 

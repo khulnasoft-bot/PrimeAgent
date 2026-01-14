@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-
 from wfx.cli.common import (
     flow_id_from_path,
     get_api_key,
@@ -188,13 +187,12 @@ def test_serve_command_json_file():
         # Mock the necessary dependencies
         with (
             patch("wfx.cli.commands.load_graph_from_path") as mock_load,
-            patch("wfx.cli.commands.uvicorn.run") as mock_uvicorn,
+            patch("wfx.cli.commands.uvicorn.Server.serve", new=AsyncMock(return_value=None)) as mock_uvicorn,
             patch.dict(os.environ, {"PRIMEAGENT_API_KEY": "test-key"}),  # pragma: allowlist secret
         ):
             import typer
-            from typer.testing import CliRunner
-
             from wfx.cli.commands import serve_command
+            from typer.testing import CliRunner
 
             # Create a mock graph
             mock_graph = MagicMock()
@@ -247,13 +245,12 @@ def test_serve_command_inline_json():
 
     with (
         patch("wfx.cli.commands.load_graph_from_path") as mock_load,
-        patch("wfx.cli.commands.uvicorn.run") as mock_uvicorn,
+        patch("wfx.cli.commands.uvicorn.Server.serve", new=AsyncMock(return_value=None)) as mock_uvicorn,
         patch.dict(os.environ, {"PRIMEAGENT_API_KEY": "test-key"}),  # pragma: allowlist secret
     ):
         import typer
-        from typer.testing import CliRunner
-
         from wfx.cli.commands import serve_command
+        from typer.testing import CliRunner
 
         # Create a mock graph
         mock_graph = MagicMock()

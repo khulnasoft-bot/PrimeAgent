@@ -1,6 +1,5 @@
 import pandas as pd
 import pytest
-
 from wfx.schema.data import Data
 from wfx.schema.dataframe import DataFrame
 

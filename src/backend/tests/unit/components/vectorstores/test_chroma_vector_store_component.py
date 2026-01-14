@@ -5,7 +5,7 @@ import pytest
 from wfx.components.chroma import ChromaVectorStoreComponent
 from wfx.schema.data import Data
 
-from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient, VersionComponentMapping
+from tests.base import ComponentTestBaseWithoutClient, VersionComponentMapping
 
 
 @pytest.mark.api_key_required
@@ -39,7 +39,7 @@ class TestChromaVectorStoreComponent(ComponentTestBaseWithoutClient):
         return [
             {"version": "1.0.19", "module": "vectorstores", "file_name": "Chroma"},
             {"version": "1.1.0", "module": "vectorstores", "file_name": "chroma"},
-            {"version": "1.1.1", "module": "vectorstores", "file_name": DID_NOT_EXIST},
+            {"version": "1.1.1", "module": "vectorstores", "file_name": "chroma"},
         ]
 
     def test_create_db(self, component_class: type[ChromaVectorStoreComponent], default_kwargs: dict[str, Any]) -> None:

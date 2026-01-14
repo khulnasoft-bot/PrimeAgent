@@ -4,11 +4,11 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from aiofile import async_open
-from sqlmodel import delete, select, text
 from wfx.graph import Graph
 from wfx.graph.vertex.param_handler import ParameterHandler
 from wfx.log.logger import configure, logger
 from wfx.utils.util import update_settings
+from sqlmodel import delete, select, text
 
 from primeagent.api.utils import cascade_delete_flow
 from primeagent.load.utils import replace_tweaks_with_env
@@ -169,7 +169,7 @@ class PrimeagentRunnerExperimental:
             user_id = str(uuid4())
             user = User(id=user_id, username=user_id, password=get_password_hash(str(uuid4())), is_active=True)
             session.add(user)
-            await session.commit()
+            await session.flush()
             await session.refresh(user)
             return user
 
@@ -180,7 +180,6 @@ class PrimeagentRunnerExperimental:
                 name=flow_dict.get("name"), id=UUID(flow_dict["id"]), data=flow_dict.get("data", {}), user_id=user_id
             )
             session.add(flow_db)
-            await session.commit()
 
     @staticmethod
     async def run_graph(

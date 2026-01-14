@@ -204,7 +204,7 @@ else
     echo "   git push origin $TAG_NAME"
     echo ""
     echo "2. Go to GitHub Actions and run the 'WFX Release' workflow:"
-    echo "   https://github.com/khulnasoft/primeagent/actions/workflows/release-wfx.yml"
+    echo "   https://github.com/khulnasoft-bot/primeagent/actions/workflows/release-wfx.yml"
     echo ""
     echo "3. Enter version: $NEW_VERSION"
     echo ""

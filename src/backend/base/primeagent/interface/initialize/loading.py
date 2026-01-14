@@ -6,9 +6,9 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 import orjson
-from pydantic import PydanticDeprecatedSince20
 from wfx.custom.eval import eval_custom_component_code
 from wfx.log.logger import logger
+from pydantic import PydanticDeprecatedSince20
 
 from primeagent.schema.artifact import get_artifact_type, post_process_raw
 from primeagent.schema.data import Data
@@ -192,26 +192,10 @@ async def build_custom_component(params: dict, custom_component: CustomComponent
     raw = post_process_raw(raw, artifact_type)
     artifact = {"repr": custom_repr, "raw": raw, "type": artifact_type}
 
-    vertex = getattr(custom_component, "vertex", None)
+    vertex = custom_component.get_vertex()
     if vertex is not None:
-        output_name = vertex.outputs[0].get("name") if vertex.outputs else "output"
-
-        # Update artifacts using proper interface or fallback to setattr with noqa
-        if hasattr(custom_component, "set_artifacts"):
-            custom_component.set_artifacts({output_name: artifact})
-        elif hasattr(custom_component, "artifacts"):
-            custom_component.artifacts = {output_name: artifact}  # type: ignore[attr-defined]
-        else:
-            custom_component._artifacts = {output_name: artifact}  # noqa: SLF001
-
-        # Update results using proper interface or fallback to setattr with noqa
-        if hasattr(custom_component, "set_results"):
-            custom_component.set_results({output_name: build_result})
-        elif hasattr(custom_component, "results"):
-            custom_component.results = {output_name: build_result}  # type: ignore[attr-defined]
-        else:
-            custom_component._results = {output_name: build_result}  # noqa: SLF001
-
+        custom_component.set_artifacts({vertex.outputs[0].get("name"): artifact})
+        custom_component.set_results({vertex.outputs[0].get("name"): build_result})
         return custom_component, build_result, artifact
 
     msg = "Custom component does not have a vertex"

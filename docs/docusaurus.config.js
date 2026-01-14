@@ -13,12 +13,12 @@ const config = {
   tagline:
     "Primeagent is a low-code app builder for RAG and multi-agent AI applications.",
   favicon: "img/favicon.ico",
-  url: "https://primeagent-docs.khulnasoft.com",
+  url: "https://docs-primeagent.khulnasoft.com",
   baseUrl: process.env.BASE_URL ? process.env.BASE_URL : "/",
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
   onBrokenAnchors: "warn",
-  organizationName: "khulnasoft",
+  organizationName: "khulnasoft-bot",
   projectName: "primeagent",
   trailingSlash: false,
   staticDirectories: ["static"],
@@ -36,42 +36,61 @@ const config = {
     },
     ...(isProduction
       ? [
-          // Ketch consent management script
+          // Google Consent Mode - Set defaults before Google tags load
           {
             tagName: "script",
             attributes: {},
-            innerHTML: `!function(){window.semaphore=window.semaphore||[],window.ketch=function(){window.semaphore.push(arguments)};var e=document.createElement("script");e.type="text/javascript",e.src="https://global.ketchcdn.com/web/v3/config/datastax/primeagent_org_web/boot.js",e.defer=e.async=!0,document.getElementsByTagName("head")[0].appendChild(e)}();`,
+            innerHTML: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+
+              // Set default consent to denied
+              gtag('consent', 'default', {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied'
+              });
+            `,
           },
-          // Ketch jurisdiction dynamic link and GA4 consent tracking
+          // TrustArc Consent Update Listener
           {
             tagName: "script",
-            attributes: {
-              defer: "true",
-            },
+            attributes: {},
             innerHTML: `
-          ;(function () {
-            const onKetchConsentGtagTrack = (consent) => {
-              if (window.gtag &&
-                  consent.purposes &&
-                  'analytics' in consent.purposes &&
-                  'targeted_advertising' in consent.purposes
-              ) {
-                const analyticsString = consent.purposes.analytics === true ? 'granted' : 'denied'
-                const targetedAdsString = consent.purposes.targeted_advertising === true ? 'granted' : 'denied'
-                const gtagObject = {
-                  analytics_storage: analyticsString,
-                  ad_personalization: targetedAdsString,
-                  ad_storage: targetedAdsString,
-                  ad_user_data: targetedAdsString,
+              (function() {
+                function updateGoogleConsent() {
+                  if (typeof window.truste !== 'undefined' && window.truste.cma) {
+                    var consent = window.truste.cma.callApi('getConsent', window.location.href) || {};
+
+                    // Map TrustArc categories to Google consent types
+                    // Category 0 = Required, 1 = Functional, 2 = Advertising, 3 = Analytics
+                    var hasAdvertising = consent[2] === 1;
+                    var hasAnalytics = consent[3] === 1;
+
+                    gtag('consent', 'update', {
+                      'ad_storage': hasAdvertising ? 'granted' : 'denied',
+                      'ad_user_data': hasAdvertising ? 'granted' : 'denied',
+                      'ad_personalization': hasAdvertising ? 'granted' : 'denied',
+                      'analytics_storage': hasAnalytics ? 'granted' : 'denied'
+                    });
+                  }
                 }
-                window.gtag('consent', 'update', gtagObject)
-              }
-            }
-            if (window.ketch) {
-              window.ketch('on', 'consent', onKetchConsentGtagTrack)
-            }
-          })()
-        `,
+
+                // Listen for consent changes
+                if (window.addEventListener) {
+                  window.addEventListener('cm_data_subject_consent_changed', updateGoogleConsent);
+                  window.addEventListener('cm_consent_preferences_set', updateGoogleConsent);
+                }
+
+                // Initial check after TrustArc loads
+                if (document.readyState === 'complete') {
+                  updateGoogleConsent();
+                } else {
+                  window.addEventListener('load', updateGoogleConsent);
+                }
+              })();
+            `,
           },
         ]
       : []),
@@ -103,7 +122,7 @@ const config = {
           lastmod: "datetime",
           changefreq: null,
           priority: null,
-          ignorePatterns: ["/preferences"],
+          ignorePatterns: [],
         },
         gtag: {
           trackingID: "G-SLQFLQ3KPT",
@@ -146,27 +165,6 @@ const config = {
     ["docusaurus-node-polyfills", { excludeAliases: ["console"] }],
     "docusaurus-plugin-image-zoom",
     ["./src/plugins/segment", { segmentPublicWriteKey: process.env.SEGMENT_PUBLIC_WRITE_KEY, allowedInDev: true }],
-    ["./src/plugins/scroll-tracking", {
-      segmentPublicWriteKey: process.env.SEGMENT_PUBLIC_WRITE_KEY,
-      allowedInDev: true,
-      selectors: [
-        {
-          selector: 'h1, h2, h3, h4, h5, h6',
-          eventName: 'primeagent-docs.khulnasoft.com - Heading Viewed',
-          properties: {
-            element_type: 'heading'
-          }
-        },
-        {
-          selector: '.ch-codeblock',
-          eventName: 'primeagent-docs.khulnasoft.com - Codeblock Viewed',
-          properties: {
-            element_type: 'code',
-            language: 'helper:codeLanguage'
-          }
-        }
-      ]
-    }],
     [
       "@docusaurus/plugin-client-redirects",
       {
@@ -204,7 +202,18 @@ const config = {
           },
           {
             to: "/concepts-components",
-            from: ["/components", "/components-overview"],
+            from: [
+              "/components",
+              "/components-overview",
+              "/components-processing",
+              "/components-data",
+              "/components-files",
+              "/components-logic",
+              "/components-tools",
+              "/components-io",
+              "/components-helpers",
+              "/components-memories",
+            ],
           },
           {
             to: "/configuration-global-variables",
@@ -330,10 +339,6 @@ const config = {
             from: "/concepts-objects",
           },
           {
-            to: "/components-helpers",
-            from: "/components-memories",
-          },
-          {
             to: "/bundles-apify",
             from: "/integrations-apify",
           },
@@ -405,12 +410,16 @@ const config = {
           // right
           {
             position: "right",
-            href: "https://github.com/khulnasoft/primeagent",
+            href: "https://github.com/khulnasoft-bot/primeagent",
             className: "header-github-link",
             target: "_blank",
             rel: null,
-            'data-event': 'primeagent-docs.khulnasoft.com - Social Clicked',
-            'data-platform': 'github'
+            'data-event': 'UI Interaction',
+            'data-action': 'clicked',
+            'data-channel': 'docs',
+            'data-element-id': 'social-github',
+            'data-namespace': 'header',
+            'data-platform-title': 'Primeagent'
           },
           {
             position: "right",
@@ -418,8 +427,12 @@ const config = {
             className: "header-twitter-link",
             target: "_blank",
             rel: null,
-            'data-event': 'primeagent-docs.khulnasoft.com - Social Clicked',
-            'data-platform': 'x'
+            'data-event': 'UI Interaction',
+            'data-action': 'clicked',
+            'data-channel': 'docs',
+            'data-element-id': 'social-twitter',
+            'data-namespace': 'header',
+            'data-platform-title': 'Primeagent'
           },
           {
             position: "right",
@@ -427,8 +440,12 @@ const config = {
             className: "header-discord-link",
             target: "_blank",
             rel: null,
-            'data-event': 'primeagent-docs.khulnasoft.com - Social Clicked',
-            'data-platform': 'discord'
+            'data-event': 'UI Interaction',
+            'data-action': 'clicked',
+            'data-channel': 'docs',
+            'data-element-id': 'social-discord',
+            'data-namespace': 'header',
+            'data-platform-title': 'Primeagent'
           },
         ],
       },
@@ -464,7 +481,7 @@ const config = {
               {
                 html: `<div class="footer-links">
                   <span>© ${new Date().getFullYear()} Primeagent</span>
-                  <span id="preferenceCenterContainer"> ·&nbsp; <a href="https://primeagent.khulnasoft.com/preferences">Manage Privacy Choices</a></span>
+                  <span id="preferenceCenterContainer"> ·&nbsp; <a href="#" onclick="if(typeof window !== 'undefined' && window.truste && window.truste.eu && window.truste.eu.clickListener) { window.truste.eu.clickListener(); } return false;" style="cursor: pointer;">Manage Privacy Choices</a></span>
                   </div>`,
               },
             ],

@@ -209,7 +209,7 @@ class Data(CrossModuleModel):
         """
         if key in {"data", "text_key"} or key.startswith("_"):
             super().__setattr__(key, value)
-        elif key in self.model_fields:
+        elif key in type(self).model_fields:
             self.data[key] = value
             super().__setattr__(key, value)
         else:
@@ -232,7 +232,7 @@ class Data(CrossModuleModel):
         return super().__dir__() + list(self.data.keys())
 
     def __str__(self) -> str:
-        # return a JSON string representation of the Data attributes
+        # return a JSON string representation of the Data atributes
         try:
             data = {k: v.to_json() if hasattr(v, "to_json") else v for k, v in self.data.items()}
             return serialize_data(data)  # use the custom serializer

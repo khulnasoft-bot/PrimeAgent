@@ -1,7 +1,7 @@
 import re
 
 import pytest
-from wfx.components.processing import UpdateDataComponent
+from wfx.components.processing.update_data import UpdateDataComponent
 from wfx.schema import Data
 
 

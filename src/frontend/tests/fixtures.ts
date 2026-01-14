@@ -16,7 +16,7 @@ export const test = base.extend({
     let allowFlowErrors = false;
 
     // Add helper method to page context
-    (page as any).allowFlowErrors = () => {
+    page.allowFlowErrors = () => {
       allowFlowErrors = true;
     };
 
@@ -97,22 +97,16 @@ export const test = base.extend({
             }
 
             if (bodyResult === bodyTimeoutToken) {
-              console.warn(
-                `Timed out reading response body for ${url}; skipping body inspection.`,
-              );
               return;
             }
 
             responseBody = bodyResult;
-          } catch (bodyReadErr) {
+          } catch (_bodyReadErr) {
             if (timeoutId) {
               clearTimeout(timeoutId);
               timeoutId = undefined;
             }
-            console.warn(
-              `Failed to read response body for ${url}; skipping body inspection.`,
-              bodyReadErr,
-            );
+
             return;
           }
 
@@ -166,7 +160,7 @@ export const test = base.extend({
               /AttributeError: .+/,
               /ImportError: .+/,
               /KeyError: .+/,
-              /An error occurred .+/,
+              /An error occured .+/,
             ];
 
             for (const pattern of exceptionPatterns) {
@@ -202,13 +196,13 @@ export const test = base.extend({
               throw new Error(errorMessage);
             }
           }
-        } catch (e) {
+        } catch (_e) {
           // Only ignore parsing errors, not our intentional throws
           if (
-            e instanceof Error &&
-            e.message.includes("Flow execution error")
+            _e instanceof Error &&
+            _e.message.includes("Flow execution error")
           ) {
-            throw e;
+            throw _e;
           }
           // Ignore parsing errors for event streams
         }
@@ -220,12 +214,7 @@ export const test = base.extend({
     // Check for errors and fail test if not allowed
     if (errors.length > 0) {
       const flowErrors = errors.filter((e) => e.type === "flow_error");
-      const httpErrors = errors.filter((e) => e.type === "http_error");
-
-      if (flowErrors.length > 0) {
-      }
-      if (httpErrors.length > 0) {
-      }
+      const _httpErrors = errors.filter((e) => e.type === "http_error");
 
       // Fail the test if flow errors occurred and weren't allowed
       if (flowErrors.length > 0 && !allowFlowErrors) {

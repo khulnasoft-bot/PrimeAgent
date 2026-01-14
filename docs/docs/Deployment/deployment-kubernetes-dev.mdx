@@ -6,7 +6,7 @@ slug: /deployment-kubernetes-dev
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The [Primeagent integrated development environment (IDE) Helm chart](https://github.com/khulnasoft/primeagent/tree/main/charts/primeagent-ide) is designed to provide a complete environment for developers to create, test, and debug their flows. It includes both the Primeagent API and visual editor.
+The [Primeagent integrated development environment (IDE) Helm chart](https://github.com/khulnasoft-bot/primeagent-helm-charts/tree/main/charts/primeagent-ide) is designed to provide a complete environment for developers to create, test, and debug their flows. It includes both the Primeagent API and visual editor.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ This example uses [Minikube](https://minikube.sigs.k8s.io/docs/start/), but you 
 1. Add the repository to Helm, and then update it:
 
 	```shell
-	helm repo add primeagent https://khulnasoft.github.io/primeagent
+	helm repo add primeagent https://khulnasoft-bot.github.io/primeagent-helm-charts
 	helm repo update
 	```
 
@@ -74,7 +74,7 @@ Now you can do the following:
 
 ## Modify your Primeagent IDE deployment
 
-You can modify the Primeagent IDE Helm chart's [`values.yaml`](https://github.com/khulnasoft/primeagent/blob/main/charts/primeagent-ide/values.yaml) file to customize your deployment.
+You can modify the Primeagent IDE Helm chart's [`values.yaml`](https://github.com/khulnasoft-bot/primeagent-helm-charts/blob/main/charts/primeagent-ide/values.yaml) file to customize your deployment.
 The following sections describe some common modifications.
 
 If you need to set secrets, Kubernetes secrets are recommended.
@@ -183,4 +183,4 @@ primeagent:
 
 * [Best practices for Primeagent on Kubernetes](/deployment-prod-best-practices)
 * [Deploy the Primeagent production environment on Kubernetes](/deployment-kubernetes-prod)
-* [Primeagent Helm Charts repository](https://github.com/khulnasoft/primeagent)
+* [Primeagent Helm Charts repository](https://github.com/khulnasoft-bot/primeagent-helm-charts)

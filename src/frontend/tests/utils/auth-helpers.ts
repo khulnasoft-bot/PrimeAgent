@@ -1,6 +1,7 @@
 import { expect } from "../fixtures";
+import { APIRequestContext } from "@playwright/test";
 
-export async function getAuthToken(request: any) {
+export async function getAuthToken(request: APIRequestContext) {
   const formData = new URLSearchParams();
   formData.append("username", "primeagent");
   formData.append("password", "primeagent");

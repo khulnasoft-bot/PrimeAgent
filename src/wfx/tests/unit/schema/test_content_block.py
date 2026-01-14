@@ -1,5 +1,4 @@
 import pytest
-
 from wfx.schema.content_block import ContentBlock
 from wfx.schema.content_types import CodeContent, ErrorContent, JSONContent, MediaContent, TextContent, ToolContent
 

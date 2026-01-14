@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores.redis import Redis
+from langchain_text_splitters import CharacterTextSplitter
 
 from wfx.base.vectorstores.model import LCVectorStoreComponent, check_cached_vector_store
 from wfx.helpers.data import docs_to_data
@@ -50,7 +50,7 @@ class RedisVectorStoreComponent(LCVectorStoreComponent):
                 documents.append(_input.to_lc_document())
             else:
                 documents.append(_input)
-        Path("documents.txt").write_text(str(documents), encoding="utf-8")
+        Path("docuemnts.txt").write_text(str(documents), encoding="utf-8")
 
         if not documents:
             if self.schema is None:

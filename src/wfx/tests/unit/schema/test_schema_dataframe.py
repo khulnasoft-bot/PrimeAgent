@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
 from langchain_core.documents import Document
-
 from wfx.schema.data import Data
 from wfx.schema.dataframe import DataFrame
 

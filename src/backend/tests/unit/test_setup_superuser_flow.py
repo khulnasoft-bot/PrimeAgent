@@ -3,8 +3,8 @@ from primeagent.services.auth.utils import verify_password
 from primeagent.services.database.models.user.model import User
 from primeagent.services.deps import get_settings_service
 from primeagent.services.utils import initialize_services, setup_superuser, teardown_superuser
-from sqlmodel import select
 from wfx.services.settings.constants import DEFAULT_SUPERUSER, DEFAULT_SUPERUSER_PASSWORD
+from sqlmodel import select
 
 
 @pytest.mark.asyncio
@@ -137,7 +137,7 @@ async def test_setup_superuser_with_custom_credentials(client):  # noqa: ARG001
     settings = get_settings_service()
     settings.auth_settings.AUTO_LOGIN = False
     settings.auth_settings.SUPERUSER = "custom_admin"
-    settings.auth_settings.SUPERUSER_PASSWORD = SecretStr("custom_password")  # pragma: allowlist secret
+    settings.auth_settings.SUPERUSER_PASSWORD = SecretStr("custom_password")
 
     # Clean DB state to avoid interference from previous tests
     async with session_scope() as session:

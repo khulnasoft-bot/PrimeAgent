@@ -4,8 +4,8 @@ import signal
 
 from gunicorn import glogging
 from gunicorn.app.base import BaseApplication
-from uvicorn.workers import UvicornWorker
 from wfx.log.logger import InterceptHandler
+from uvicorn.workers import UvicornWorker
 
 
 class PrimeagentUvicornWorker(UvicornWorker):
@@ -49,6 +49,16 @@ class Logger(glogging.Logger):
 
         logging.getLogger("gunicorn.error").handlers = [InterceptHandler()]
         logging.getLogger("gunicorn.access").handlers = [InterceptHandler()]
+
+    def error(self, msg, *args, **kwargs):
+        """Override error method to filter out SIGSEGV messages."""
+        # Filter out "Worker was sent SIGSEGV" messages which are common on macOS
+        # with multiprocessing issues - these are typically handled by worker restart
+        if "SIGSEGV" in str(msg):
+            # Log at debug level instead of error
+            self.log.debug(msg, *args, **kwargs)
+        else:
+            super().error(msg, *args, **kwargs)
 
 
 class PrimeagentApplication(BaseApplication):

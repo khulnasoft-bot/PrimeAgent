@@ -10,30 +10,33 @@ import {
   useState,
 } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
-import { Badge } from "@/components/ui/badge";
-import { ICON_STROKE_WIDTH } from "@/constants/constants";
-import { useShortcutsStore } from "@/stores/shortcuts";
-import type { targetHandleType } from "@/types/flow";
+
 import ForwardedIconComponent, {
   default as IconComponent,
-} from "../../../../components/common/genericIconComponent";
-import ShadTooltip from "../../../../components/common/shadTooltipComponent";
-import { Button } from "../../../../components/ui/button";
-import useFlowStore from "../../../../stores/flowStore";
-import { useTypesStore } from "../../../../stores/typesStore";
-import type { NodeOutputFieldComponentType } from "../../../../types/components";
-import {
-  getGroupOutputNodeId,
-  scapedJSONStringfy,
-  scapeJSONParse,
-} from "../../../../utils/reactflowUtils";
+} from "@/components/common/genericIconComponent";
+import ShadTooltip from "@/components/common/shadTooltipComponent";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ICON_STROKE_WIDTH } from "@/constants/constants";
+import useFlowStore from "@/stores/flowStore";
+import { useShortcutsStore } from "@/stores/shortcuts";
+import { useTypesStore } from "@/stores/typesStore";
+import type { NodeOutputFieldComponentType } from "@/types/components";
+import type { targetHandleType } from "@/types/flow";
+import { nodeColorsName } from "@/utils/styleUtils";
 import {
   cn,
   logFirstMessage,
   logHasMessage,
   logTypeIsError,
   logTypeIsUnknown,
-} from "../../../../utils/utils";
+} from "@/utils/utils";
+
+import {
+  getGroupOutputNodeId,
+  scapedJSONStringfy,
+  scapeJSONParse,
+} from "../../../../utils/reactflowUtils";
 import HandleRenderComponent from "../handleRenderComponent";
 import OutputComponent from "../OutputComponent";
 import OutputModal from "../outputModal";
@@ -47,9 +50,8 @@ const _EyeIcon = memo(
     />
   ),
 );
-
 const SnowflakeIcon = memo(() => (
-  <IconComponent className="h-5 w-5 text-ice" name="Snowflake" />
+  <IconComponent className="!w-3 !h-3 text-ice" name="Snowflake" />
 ));
 
 const InspectButton = memo(
@@ -111,6 +113,7 @@ function NodeOutputField({
   data,
   title,
   id,
+  loopInputId,
   colors,
   tooltipTitle,
   showNode,
@@ -270,13 +273,34 @@ function NodeOutputField({
   const outputInspection = useShortcutsStore((state) => state.outputInspection);
   useHotkeys(outputInspection, handleOpenOutputModal, { preventDefault: true });
 
+  // Create separate colors for loop input (left handle)
+  // Derive colors from loop_types dynamically instead of hardcoding
+  const loopInputColorName = useMemo(() => {
+    if (data.node?.outputs![index].allows_loop) {
+      const output = data.node?.outputs![index];
+      const loopTypeColors =
+        output.loop_types
+          ?.map((type) => nodeColorsName[type] ?? nodeColorsName.unknown)
+          .filter((color) => color) ?? [];
+
+      if (loopTypeColors.length > 0) {
+        // Combine original color with loop type colors, removing duplicates
+        const combinedColors = colorName
+          ? [...colorName, ...loopTypeColors]
+          : loopTypeColors;
+        return Array.from(new Set(combinedColors));
+      }
+    }
+    return colorName;
+  }, [colorName, data.node?.outputs, index]);
+
   const LoopHandle = useMemo(() => {
     if (data.node?.outputs![index].allows_loop) {
       return (
         <HandleRenderComponent
           left={true}
           tooltipTitle={tooltipTitle}
-          id={id}
+          id={loopInputId}
           title={title}
           nodeId={data.id}
           myData={myData}
@@ -284,13 +308,13 @@ function NodeOutputField({
           setFilterEdge={setFilterEdge}
           showNode={showNode}
           testIdComplement={`${data?.type?.toLowerCase()}-${showNode ? "shownode" : "noshownode"}`}
-          colorName={colorName}
+          colorName={loopInputColorName}
         />
       );
     }
   }, [
     tooltipTitle,
-    id,
+    loopInputId,
     title,
     data.id,
     myData,
@@ -298,7 +322,7 @@ function NodeOutputField({
     setFilterEdge,
     showNode,
     data?.type,
-    colorName,
+    loopInputColorName,
   ]);
 
   const Handle = useMemo(
@@ -314,7 +338,11 @@ function NodeOutputField({
         setFilterEdge={setFilterEdge}
         showNode={showNode}
         testIdComplement={`${data?.type?.toLowerCase()}-${showNode ? "shownode" : "noshownode"}`}
-        colorName={colorName}
+        colorName={
+          data.node?.outputs?.[index].allows_loop
+            ? loopInputColorName
+            : colorName
+        }
       />
     ),
     [
@@ -328,6 +356,9 @@ function NodeOutputField({
       showNode,
       data?.type,
       colorName,
+      data.node?.outputs?.[index].allows_loop,
+      loopInputColorName,
+      index,
     ],
   );
 
@@ -357,7 +388,7 @@ function NodeOutputField({
         </div>
 
         {data.node?.frozen && (
-          <div className="pr-1" data-testid="frozen-icon">
+          <div data-testid="frozen-icon">
             <SnowflakeIcon />
           </div>
         )}

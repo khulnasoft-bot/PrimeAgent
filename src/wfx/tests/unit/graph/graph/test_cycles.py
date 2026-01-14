@@ -13,7 +13,7 @@ try:
     from wfx.graph.graph.utils import find_cycle_vertices
     from wfx.io import MessageTextInput, Output
     from wfx.schema.message import Message
-except Exception as e:  # noqa: BLE001
+except Exception as e:
     pytest.skip(f"Failed to import components in tests. Exception: {e}", allow_module_level=True)
 
 

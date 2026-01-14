@@ -1,5 +1,4 @@
 import pytest
-
 from wfx.components.input_output.chat import ChatInput
 from wfx.schema.message import Message
 

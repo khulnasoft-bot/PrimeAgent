@@ -76,12 +76,18 @@ export default function NodeDescription({
     }
     return (
       <MemoizedMarkdown
-        linkTarget="_blank"
         className={cn(
           "markdown prose flex w-full flex-col leading-5 word-break-break-word [&_pre]:whitespace-break-spaces [&_pre]:!bg-code-description-background [&_pre_code]:!bg-code-description-background",
           stickyNote ? "text-mmd" : "text-xs",
           mdClassName,
         )}
+        components={{
+          a: ({ node, ...props }) => (
+            <a {...props} target="_blank" rel="noopener noreferrer">
+              {props.children}
+            </a>
+          ),
+        }}
       >
         {String(description)}
       </MemoizedMarkdown>
@@ -128,17 +134,7 @@ export default function NodeDescription({
     }
   };
 
-  const handleDoubleClickFn = (e?: React.MouseEvent | React.KeyboardEvent) => {
-    if (e) {
-      e.stopPropagation();
-      if (
-        e.type === "keydown" &&
-        (e as React.KeyboardEvent).key !== "Enter" &&
-        (e as React.KeyboardEvent).key !== " "
-      ) {
-        return;
-      }
-    }
+  const handleDoubleClickFn = () => {
     if (stickyNote) {
       setEditNameDescription?.(true);
       takeSnapshot();
@@ -196,20 +192,14 @@ export default function NodeDescription({
         <div
           data-testid="generic-node-desc"
           ref={overflowRef}
-          role="button"
-          tabIndex={0}
           className={cn(
             "nodoubleclick generic-node-desc-text h-full cursor-grab text-muted-foreground word-break-break-word",
             description === "" || !description ? "font-light italic" : "",
             placeholderClassName,
           )}
           onDoubleClick={handleDoubleClickFn}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              handleDoubleClickFn(e as any);
-            }
-          }}
+          role="textbox"
+          tabIndex={0}
         >
           {renderedDescription}
         </div>

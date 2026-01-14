@@ -13,12 +13,12 @@ test.skip(
 
     await page.getByTestId("sidebar-search-input").click();
     await page.getByTestId("sidebar-search-input").fill("url");
-    await page.waitForSelector('[data-testid="dataURL"]', {
+    await page.waitForSelector('[data-testid="data_sourceURL"]', {
       timeout: 1000,
     });
 
     await page
-      .getByTestId("dataURL")
+      .getByTestId("data_sourceURL")
       .dragTo(page.locator('//*[@id="react-flow-id"]'), {
         targetPosition: { x: 300, y: 300 },
       });
@@ -27,11 +27,11 @@ test.skip(
 
     await page
       .getByTestId("inputlist_str_urls_0")
-      .fill("https://primeagent-docs.khulnasoft.com/");
+      .fill("https://docs-primeagent.khulnasoft.com/");
 
     await page
       .getByTestId("inputlist_str_urls_1")
-      .fill("https://www.primeagent.org/");
+      .fill("https://www.primeagent.khulnasoft.com/");
     await adjustScreenView(page);
 
     await page.getByTestId("default_slider_display_value").click();

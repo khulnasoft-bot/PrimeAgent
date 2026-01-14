@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
+from wfx.log.logger import logger
+from wfx.services.settings.constants import DEFAULT_SUPERUSER, DEFAULT_SUPERUSER_PASSWORD
 from sqlalchemy import delete
 from sqlalchemy import exc as sqlalchemy_exc
 from sqlmodel import col, select
-from wfx.log.logger import logger
-from wfx.services.settings.constants import DEFAULT_SUPERUSER, DEFAULT_SUPERUSER_PASSWORD
 
 from primeagent.services.auth.utils import create_super_user, verify_password
 from primeagent.services.cache.base import ExternalAsyncBaseCacheService
@@ -20,8 +20,8 @@ from primeagent.services.schema import ServiceType
 from .deps import get_db_service, get_service, get_settings_service, session_scope
 
 if TYPE_CHECKING:
-    from sqlmodel.ext.asyncio.session import AsyncSession
     from wfx.services.settings.manager import SettingsService
+    from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 async def get_or_create_super_user(session: AsyncSession, username, password, is_default):
@@ -119,12 +119,10 @@ async def teardown_superuser(settings_service, session: AsyncSession) -> None:
             # if it has logged in, it means the user is using it to login
             if user and user.is_superuser is True and not user.last_login_at:
                 await session.delete(user)
-                await session.commit()
                 await logger.adebug("Default superuser removed successfully.")
 
         except Exception as exc:
             logger.exception(exc)
-            await session.rollback()
             msg = "Could not remove default superuser."
             raise RuntimeError(msg) from exc
 
@@ -186,11 +184,9 @@ async def clean_transactions(settings_service: SettingsService, session: AsyncSe
         )
 
         await session.exec(delete_stmt)
-        await session.commit()
         logger.debug("Successfully cleaned up old transactions")
     except (sqlalchemy_exc.SQLAlchemyError, asyncio.TimeoutError) as exc:
         logger.error(f"Error cleaning up transactions: {exc!s}")
-        await session.rollback()
         # Don't re-raise since this is a cleanup task
 
 
@@ -215,11 +211,9 @@ async def clean_vertex_builds(settings_service: SettingsService, session: AsyncS
         )
 
         await session.exec(delete_stmt)
-        await session.commit()
         logger.debug("Successfully cleaned up old vertex builds")
     except (sqlalchemy_exc.SQLAlchemyError, asyncio.TimeoutError) as exc:
         logger.error(f"Error cleaning up vertex builds: {exc!s}")
-        await session.rollback()
         # Don't re-raise since this is a cleanup task
 
 
@@ -245,6 +239,7 @@ def register_all_service_factories() -> None:
     from primeagent.services.task import factory as task_factory
     from primeagent.services.telemetry import factory as telemetry_factory
     from primeagent.services.tracing import factory as tracing_factory
+    from primeagent.services.transaction import factory as transaction_factory
     from primeagent.services.variable import factory as variable_factory
 
     # Register all factories
@@ -257,6 +252,7 @@ def register_all_service_factories() -> None:
     service_manager.register_factory(variable_factory.VariableServiceFactory())
     service_manager.register_factory(telemetry_factory.TelemetryServiceFactory())
     service_manager.register_factory(tracing_factory.TracingServiceFactory())
+    service_manager.register_factory(transaction_factory.TransactionServiceFactory())
     service_manager.register_factory(state_factory.StateServiceFactory())
     service_manager.register_factory(job_queue_factory.JobQueueServiceFactory())
     service_manager.register_factory(task_factory.TaskServiceFactory())
@@ -289,5 +285,7 @@ async def initialize_services(*, fix_migration: bool = False) -> None:
         await get_db_service().assign_orphaned_flows_to_superuser()
     except sqlalchemy_exc.IntegrityError as exc:
         await logger.awarning(f"Error assigning orphaned flows to the superuser: {exc!s}")
-    await clean_transactions(settings_service, session)
-    await clean_vertex_builds(settings_service, session)
+
+    async with session_scope() as session:
+        await clean_transactions(settings_service, session)
+        await clean_vertex_builds(settings_service, session)

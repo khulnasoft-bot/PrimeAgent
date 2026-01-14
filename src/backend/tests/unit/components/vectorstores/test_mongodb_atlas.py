@@ -4,11 +4,11 @@ from typing import Any
 
 import pytest
 from langchain_community.embeddings.fake import DeterministicFakeEmbedding
-from pymongo.collection import Collection
 from wfx.components.mongodb import MongoVectorStoreComponent
 from wfx.schema.data import Data
+from pymongo.collection import Collection
 
-from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient, VersionComponentMapping
+from tests.base import ComponentTestBaseWithoutClient, VersionComponentMapping
 
 
 @pytest.mark.skipif(
@@ -45,7 +45,7 @@ class TestMongoVectorStoreComponent(ComponentTestBaseWithoutClient):
         return [
             {"version": "1.0.19", "module": "vectorstores", "file_name": "MongoDBAtlasVector"},
             {"version": "1.1.0", "module": "vectorstores", "file_name": "mongodb_atlas"},
-            {"version": "1.1.1", "module": "vectorstores", "file_name": DID_NOT_EXIST},
+            {"version": "1.1.1", "module": "vectorstores", "file_name": "mongodb_atlas"},
         ]
 
     def __create_search_index(

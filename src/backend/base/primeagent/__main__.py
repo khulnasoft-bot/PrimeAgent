@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from httpx import HTTPError
 from jose import JWTError
+from wfx.log.logger import configure, logger
+from wfx.services.settings.constants import DEFAULT_SUPERUSER, DEFAULT_SUPERUSER_PASSWORD
 from multiprocess import cpu_count
 from multiprocess.context import Process
 from packaging import version as pkg_version
@@ -26,14 +28,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from sqlmodel import select
-from wfx.log.logger import configure, logger
-from wfx.services.settings.constants import DEFAULT_SUPERUSER, DEFAULT_SUPERUSER_PASSWORD
 
 from primeagent.cli.progress import create_primeagent_progress
 from primeagent.initial_setup.setup import get_or_create_default_folder
 from primeagent.main import setup_app
 from primeagent.services.auth.utils import check_key, get_current_user_by_jwt
-from primeagent.services.deps import get_db_service, get_settings_service, session_scope
+from primeagent.services.deps import get_db_service, get_settings_service, is_settings_service_initialized, session_scope
 from primeagent.services.utils import initialize_services
 from primeagent.utils.version import fetch_latest_version, get_version_info
 from primeagent.utils.version import is_pre_release as primeagent_is_pre_release
@@ -159,7 +159,6 @@ def set_var_for_macos_issue() -> None:
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         # https://stackoverflow.com/questions/75747888/uwsgi-segmentation-fault-with-flask-python-app-behind-nginx-after-running-for-2 # noqa: E501
         os.environ["no_proxy"] = "*"  # to avoid error with gunicorn
-        logger.debug("Set OBJC_DISABLE_INITIALIZE_FORK_SAFETY to YES to avoid error")
 
 
 def wait_for_server_ready(host, port, protocol) -> None:
@@ -269,6 +268,14 @@ def run(
 ) -> None:
     """Run Primeagent."""
     if env_file:
+        if is_settings_service_initialized():
+            err = (
+                "Settings service is already initialized. This indicates potential race conditions "
+                "with settings initialization. Ensure the settings service is not created during "
+                "module loading."
+            )
+            # i.e. ensures the env file is loaded before the settings service is initialized
+            raise ValueError(err)
         load_dotenv(env_file, override=True)
 
     # Set and normalize log level, with precedence: cli > env > default
@@ -531,9 +538,7 @@ def build_version_notice(current_version: str, package_name: str) -> str:
         'A new version of primeagent is available: 1.1.0'
     """
     with suppress(httpx.ConnectError):
-        latest_version = fetch_latest_version(
-            package_name, include_prerelease=primeagent_is_pre_release(current_version)
-        )
+        latest_version = fetch_latest_version(package_name, include_prerelease=primeagent_is_pre_release(current_version))
         if latest_version and pkg_version.parse(current_version) < pkg_version.parse(latest_version):
             release_type = "pre-release" if primeagent_is_pre_release(latest_version) else "version"
             return f"A new {release_type} of {package_name} is available: {latest_version}"
@@ -603,7 +608,7 @@ def print_banner(host: str, port: int, protocol: str) -> None:
         status_icon = "🟢"
 
     info_text = (
-        f"{github_icon} GitHub: Star for updates {arrow} https://github.com/khulnasoft/primeagent\n"
+        f"{github_icon} GitHub: Star for updates {arrow} https://github.com/khulnasoft-bot/primeagent\n"
         f"{discord_icon} Discord: Join for support {arrow} https://discord.com/invite/EqksyE2EX9"
     )
     telemetry_text = (
@@ -630,7 +635,7 @@ def print_banner(host: str, port: int, protocol: str) -> None:
         # Fallback to a simpler banner without emojis for Windows systems with encoding issues
         fallback_message = (
             f"Welcome to {package_name}\n\n"
-            "* GitHub: https://github.com/khulnasoft/primeagent\n"
+            "* GitHub: https://github.com/khulnasoft-bot/primeagent\n"
             "# Discord: https://discord.com/invite/EqksyE2EX9\n\n"
             f"{telemetry_text}\n\n"
             f"[OK] Open Primeagent -> {protocol}://{access_host}:{port}"
@@ -641,7 +646,7 @@ def print_banner(host: str, port: int, protocol: str) -> None:
         except UnicodeEncodeError:
             # Last resort: use logger instead of print
             logger.info(f"Welcome to {package_name}")
-            logger.info("GitHub: https://github.com/khulnasoft/primeagent")
+            logger.info("GitHub: https://github.com/khulnasoft-bot/primeagent")
             logger.info("Discord: https://discord.com/invite/EqksyE2EX9")
             logger.info(f"Open Primeagent: {protocol}://{access_host}:{port}")
 
@@ -882,12 +887,10 @@ def api_key(
             stmt = select(ApiKey).where(ApiKey.user_id == superuser.id)
             api_key = (await session.exec(stmt)).first()
             if api_key:
-                await delete_api_key(session, api_key.id)
+                await delete_api_key(session, api_key.id, superuser.id)
 
             api_key_create = ApiKeyCreate(name="CLI")
-            unmasked_api_key = await create_api_key(session, api_key_create, user_id=superuser.id)
-            await session.commit()
-            return unmasked_api_key
+            return await create_api_key(session, api_key_create, user_id=superuser.id)
 
     unmasked_api_key = asyncio.run(aapi_key())
     # Create a banner to display the API key and tell the user it won't be shown again

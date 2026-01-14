@@ -2,7 +2,7 @@
 # Keep this syntax directive! It's used to enable Docker BuildKit
 
 ARG PRIMEAGENT_IMAGE
-FROM $PRIMEAGENT_IMAGE
+FROM ${PRIMEAGENT_IMAGE}
 
 RUN rm -rf /app/.venv/primeagent/frontend
 

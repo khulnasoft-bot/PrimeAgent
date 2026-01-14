@@ -1,7 +1,6 @@
 """Unit tests for the wfx.helpers.flow module."""
 
 import pytest
-
 from wfx.utils.primeagent_utils import has_primeagent_memory
 
 # Globals

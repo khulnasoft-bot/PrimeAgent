@@ -14,7 +14,7 @@ from wfx.schema.data import Data
 class NotionPageCreator(LCToolComponent):
     display_name: str = "Create Page "
     description: str = "A component for creating Notion pages."
-    documentation: str = "https://primeagent-docs.khulnasoft.com/integrations/notion/page-create"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/bundles-notion"
     icon = "NotionDirectoryLoader"
 
     inputs = [

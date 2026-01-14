@@ -4,7 +4,7 @@ services:
     name: primeagent
     runtime: docker
     dockerfilePath: ./docker/render.Dockerfile
-    repo: https://github.com/khulnasoft/primeagent
+    repo: https://github.com/khulnasoft-bot/primeagent
     branch: main
     plan: standard
     healthCheckPath: /health_check

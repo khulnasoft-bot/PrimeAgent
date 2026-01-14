@@ -1,4 +1,4 @@
-.PHONY: all init format_backend format lint build run_backend dev help tests coverage clean_python_cache clean_npm_cache clean_frontend_build clean_all run_clic load_test_setup load_test_setup_basic load_test_list_flows load_test_run load_test_primeagent_quick load_test_stress load_test_example load_test_clean load_test_remote_setup load_test_remote_run load_test_help
+.PHONY: all init format_backend format lint build run_backend dev help tests coverage clean_python_cache clean_npm_cache clean_frontend_build clean_all run_clic load_test_setup load_test_setup_basic load_test_list_flows load_test_run load_test_primeagent_quick load_test_stress load_test_example load_test_clean load_test_remote_setup load_test_remote_run load_test_help docs docs_build docs_install
 
 # Configurations
 VERSION=$(shell grep "^version" pyproject.toml | sed 's/.*\"\(.*\)\"$$/\1/')
@@ -54,6 +54,7 @@ help: ## show basic help message with common commands
 	@echo "  $(GREEN)make format$(NC)              - Format all code (backend + frontend)"
 	@echo "  $(GREEN)make tests$(NC)               - Run all tests"
 	@echo "  $(GREEN)make build$(NC)               - Build the project"
+	@echo "  $(GREEN)make docs$(NC)                - Start documentation server (http://localhost:3030)"
 	@echo "  $(GREEN)make clean_all$(NC)           - Clean all caches and build artifacts"
 	@echo ''
 	@echo "$(GREEN)Specialized Help Commands:$(NC)"
@@ -208,11 +209,11 @@ template_tests: ## run all starter project template tests
 # CODE QUALITY
 ######################
 
-codetypo: ## run codetypo to check spelling
-	@uvx codetypo --toml pyproject.toml
+codespell: ## run codespell to check spelling
+	@uvx codespell --toml pyproject.toml
 
-fix_codetypo: ## run codetypo to fix spelling errors
-	@uvx codetypo --toml pyproject.toml --write
+fix_codespell: ## run codespell to fix spelling errors
+	@uvx codespell --toml pyproject.toml --write
 
 format_backend: ## backend code formatters
 	@uv run ruff check . --fix
@@ -371,14 +372,10 @@ dockerfile_build_fe: dockerfile_build
 		-f ${DOCKERFILE_FRONTEND} \
 		-t primeagent_frontend:${VERSION} .
 
-clear_dockerimage: ## clear dangling images or specific images (image_name=primeagent)
+clear_dockerimage:
 	@echo 'Clearing the docker build'
 	@if $(DOCKER) images -f "dangling=true" -q | grep -q '.*'; then \
 		$(DOCKER) rmi $$($(DOCKER) images -f "dangling=true" -q); \
-	fi
-	@if [ ! -z "$(image_name)" ]; then \
-		echo "Removing images related to $(image_name)..."; \
-		$(DOCKER) rmi $$($(DOCKER) images -q "$(image_name)") || true; \
 	fi
 
 docker_compose_up: docker_build docker_compose_down
@@ -840,8 +837,8 @@ help_backend: ## show backend-specific commands
 	@echo "  $(GREEN)make format_backend$(NC)      - Format backend code (ruff)"
 	@echo "  $(GREEN)make format_frontend_check$(NC) - Check frontend formatting (biome)"
 	@echo "  $(GREEN)make lint$(NC)                - Run backend linters (mypy)"
-	@echo "  $(GREEN)make codetypo$(NC)           - Check spelling errors"
-	@echo "  $(GREEN)make fix_codetypo$(NC)       - Fix spelling errors automatically"
+	@echo "  $(GREEN)make codespell$(NC)           - Check spelling errors"
+	@echo "  $(GREEN)make fix_codespell$(NC)       - Fix spelling errors automatically"
 	@echo "  $(GREEN)make unsafe_fix$(NC)          - Run ruff with unsafe fixes"
 	@echo ''
 	@echo "$(GREEN)Database (Alembic):$(NC)"
@@ -984,7 +981,7 @@ help_advanced: ## show advanced and miscellaneous commands
 	@echo ''
 	@echo "$(GREEN)Utilities:$(NC)"
 	@echo "  $(GREEN)make check_tools$(NC)         - Verify required tools are installed"
-	@echo "  $(GREEN)make clear_dockerimage$(NC)   - Clear dangling Docker images or specific images (options: image_name=primeagent)"
+	@echo "  $(GREEN)make clear_dockerimage$(NC)   - Clear dangling Docker images"
 	@echo ''
 	@echo "$(GREEN)Backend Configuration:$(NC)"
 	@echo "  Backend commands support these variables:"
@@ -999,6 +996,39 @@ help_advanced: ## show advanced and miscellaneous commands
 	@echo ''
 	@echo "$(GREEN)═══════════════════════════════════════════════════════════════════$(NC)"
 	@echo ''
+
+######################
+# DOCUMENTATION
+######################
+
+docs_port ?= 3030
+
+check_yarn:
+	@command -v yarn >/dev/null 2>&1 || { \
+		echo "$(RED)Error: yarn is not installed.$(NC)"; \
+		echo "$(YELLOW)The docs project requires yarn. Please install it:$(NC)"; \
+		echo "  brew install yarn"; \
+		echo "  # or"; \
+		echo "  npm install -g yarn"; \
+		exit 1; \
+	}
+
+docs_install: check_yarn ## install documentation dependencies
+	@echo "$(GREEN)Installing documentation dependencies...$(NC)"
+	@cd docs && yarn install
+
+docs: docs_install ## start documentation development server (default port 3030)
+	@echo "$(GREEN)Starting documentation server at http://localhost:$(docs_port)$(NC)"
+	@cd docs && yarn start --port $(docs_port)
+
+docs_build: docs_install ## build documentation for production
+	@echo "$(GREEN)Building documentation...$(NC)"
+	@cd docs && yarn build
+	@echo "$(GREEN)Documentation built successfully in docs/build/$(NC)"
+
+docs_serve: docs_build ## build and serve documentation locally
+	@echo "$(GREEN)Serving built documentation...$(NC)"
+	@cd docs && yarn serve --port $(docs_port)
 
 ######################
 # INCLUDE FRONTEND MAKEFILE

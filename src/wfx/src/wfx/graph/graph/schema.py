@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING, NamedTuple, Protocol
 
 from typing_extensions import NotRequired, TypedDict
 
+from wfx.graph.edge.schema import EdgeData
+from wfx.graph.vertex.schema import NodeData
+
 if TYPE_CHECKING:
-    from wfx.graph.edge.schema import EdgeData
     from wfx.graph.schema import ResultData
     from wfx.graph.vertex.base import Vertex
-    from wfx.graph.vertex.schema import NodeData
     from wfx.schema.log import LoggableType
 
 

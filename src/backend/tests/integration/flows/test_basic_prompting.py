@@ -1,5 +1,5 @@
 from wfx.components.input_output import ChatInput, ChatOutput
-from wfx.components.processing import PromptComponent
+from wfx.components.models_and_agents import PromptComponent
 from wfx.graph import Graph
 from wfx.schema.message import Message
 

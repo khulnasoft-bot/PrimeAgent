@@ -101,7 +101,7 @@ class GleanAPIWrapper(BaseModel):
 class GleanSearchAPIComponent(LCToolComponent):
     display_name: str = "Glean Search API"
     description: str = "Search using Glean's API."
-    documentation: str = "https://primeagent-docs.khulnasoft.com/Components/components-tools#glean-search-api"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/bundles-glean"
     icon: str = "Glean"
 
     outputs = [

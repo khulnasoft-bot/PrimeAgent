@@ -98,7 +98,7 @@ class TestWfxReexportModules:
     @classmethod
     def _discover_primeagent_modules(cls) -> list[str]:
         """Dynamically discover all primeagent modules."""
-        primeagent_modules = []
+        primeagent_modules: list[str] = []
         try:
             import primeagent
 
@@ -268,9 +268,7 @@ class TestWfxReexportModules:
                         attr = getattr(lf_module, item)
                         assert attr is not None, f"Attribute {item} is None in {primeagent_module}"
                     except AttributeError:
-                        pytest.fail(
-                            f"Complex module {primeagent_module} missing expected attribute {item} from __all__"
-                        )
+                        pytest.fail(f"Complex module {primeagent_module} missing expected attribute {item} from __all__")
 
                 successful_imports += 1
 

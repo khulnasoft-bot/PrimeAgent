@@ -6,20 +6,23 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 import orjson
-from primeagent.schema.artifact import get_artifact_type, post_process_raw
-from primeagent.schema.data import Data
-from primeagent.services.deps import get_tracing_service, session_scope
 from pydantic import PydanticDeprecatedSince20
 
 from wfx.custom.eval import eval_custom_component_code
 from wfx.log.logger import logger
+from wfx.schema.artifact import get_artifact_type, post_process_raw
+from wfx.schema.data import Data
+from wfx.services.deps import get_settings_service, session_scope
+from wfx.services.session import NoopSession
 
 if TYPE_CHECKING:
-    from primeagent.events.event_manager import EventManager
-
     from wfx.custom.custom_component.component import Component
     from wfx.custom.custom_component.custom_component import CustomComponent
     from wfx.graph.vertex.base import Vertex
+
+    # This is forward declared to avoid circular import
+    class EventManager:
+        pass
 
 
 def instantiate_class(
@@ -43,7 +46,7 @@ def instantiate_class(
         _user_id=user_id,
         _parameters=custom_params,
         _vertex=vertex,
-        _tracing_service=get_tracing_service(),
+        _tracing_service=None,
         _id=vertex.id,
     )
     if hasattr(custom_component, "set_event_manager"):
@@ -108,38 +111,181 @@ def convert_kwargs(params):
     return params
 
 
+def load_from_env_vars(params, load_from_db_fields, context=None):
+    for field in load_from_db_fields:
+        if field not in params or not params[field]:
+            continue
+        variable_name = params[field]
+        key = None
+
+        # Check request_variables in context
+        if context and "request_variables" in context:
+            request_variables = context["request_variables"]
+            if variable_name in request_variables:
+                key = request_variables[variable_name]
+                logger.debug(f"Found context override for variable '{variable_name}'")
+
+        if key is None:
+            key = os.getenv(variable_name)
+            if key:
+                logger.info(f"Using environment variable {variable_name} for {field}")
+            else:
+                logger.error(f"Environment variable {variable_name} is not set.")
+        params[field] = key if key is not None else None
+        if key is None:
+            logger.warning(f"Could not get value for {field}. Setting it to None.")
+    return params
+
+
+async def update_table_params_with_load_from_db_fields(
+    custom_component: CustomComponent,
+    params: dict,
+    table_field_name: str,
+    *,
+    fallback_to_env_vars: bool = False,
+) -> dict:
+    """Update table parameters with load_from_db column values."""
+    # Get the table data and column metadata
+    table_data = params.get(table_field_name, [])
+    metadata_key = f"{table_field_name}_load_from_db_columns"
+    load_from_db_columns = params.pop(metadata_key, [])
+
+    if not table_data or not load_from_db_columns:
+        return params
+
+    # Extract context once for use throughout the function
+    context = None
+    if hasattr(custom_component, "graph") and hasattr(custom_component.graph, "context"):
+        context = custom_component.graph.context
+
+    async with session_scope() as session:
+        settings_service = get_settings_service()
+        is_noop_session = isinstance(session, NoopSession) or (
+            settings_service and settings_service.settings.use_noop_database
+        )
+
+        # Process each row in the table
+        updated_table_data = []
+        for row in table_data:
+            if not isinstance(row, dict):
+                updated_table_data.append(row)
+                continue
+
+            updated_row = row.copy()
+
+            # Process each column that needs database loading
+            for column_name in load_from_db_columns:
+                if column_name not in updated_row:
+                    continue
+
+                # The column value should be the name of the global variable to lookup
+                variable_name = updated_row[column_name]
+                if not variable_name:
+                    continue
+
+                try:
+                    if is_noop_session:
+                        # Fallback to environment variables
+                        key = None
+                        # Check request_variables first
+                        if context and "request_variables" in context:
+                            request_variables = context["request_variables"]
+                            if variable_name in request_variables:
+                                key = request_variables[variable_name]
+                                logger.debug(f"Found context override for variable '{variable_name}'")
+
+                        if key is None:
+                            key = os.getenv(variable_name)
+                            if key:
+                                logger.info(
+                                    f"Using environment variable {variable_name} for table column {column_name}"
+                                )
+                            else:
+                                logger.error(f"Environment variable {variable_name} is not set.")
+                    else:
+                        # Load from database
+                        key = await custom_component.get_variable(
+                            name=variable_name, field=f"{table_field_name}.{column_name}", session=session
+                        )
+
+                except ValueError as e:
+                    if "User id is not set" in str(e):
+                        raise
+                    logger.debug(str(e))
+                    key = None
+
+                # If we couldn't get from database and fallback is enabled, try environment
+                if fallback_to_env_vars and key is None:
+                    key = os.getenv(variable_name)
+                    if key:
+                        logger.info(f"Using environment variable {variable_name} for table column {column_name}")
+                    else:
+                        logger.error(f"Environment variable {variable_name} is not set.")
+
+                # Update the column value with the resolved value
+                updated_row[column_name] = key if key is not None else None
+                if key is None:
+                    logger.warning(
+                        f"Could not get value for {variable_name} in table column {column_name}. Setting it to None."
+                    )
+
+            updated_table_data.append(updated_row)
+
+        params[table_field_name] = updated_table_data
+        return params
+
+
 async def update_params_with_load_from_db_fields(
-    custom_component: Component,
+    custom_component: CustomComponent,
     params,
     load_from_db_fields,
     *,
     fallback_to_env_vars=False,
 ):
     async with session_scope() as session:
+        settings_service = get_settings_service()
+        is_noop_session = isinstance(session, NoopSession) or (
+            settings_service and settings_service.settings.use_noop_database
+        )
+        if is_noop_session:
+            logger.debug("Loading variables from environment variables because database is not available.")
+            context = None
+            if hasattr(custom_component, "graph") and hasattr(custom_component.graph, "context"):
+                context = custom_component.graph.context
+            return load_from_env_vars(params, load_from_db_fields, context=context)
         for field in load_from_db_fields:
-            if field not in params or not params[field]:
-                continue
+            # Check if this is a table field (using our naming convention)
+            if field.startswith("table:"):
+                table_field_name = field[6:]  # Remove "table:" prefix
+                params = await update_table_params_with_load_from_db_fields(
+                    custom_component,
+                    params,
+                    table_field_name,
+                    fallback_to_env_vars=fallback_to_env_vars,
+                )
+            else:
+                # Handle regular field-level load_from_db
+                if field not in params or not params[field]:
+                    continue
 
-            try:
-                key = await custom_component.get_variable(name=params[field], field=field, session=session)
-            except ValueError as e:
-                if "User id is not set" in str(e):
-                    raise
-                if "variable not found." in str(e) and not fallback_to_env_vars:
-                    raise
-                await logger.adebug(str(e))
-                key = None
+                try:
+                    key = await custom_component.get_variable(name=params[field], field=field, session=session)
+                except ValueError as e:
+                    if any(reason in str(e) for reason in ["User id is not set", "variable not found."]):
+                        raise
+                    logger.debug(str(e))
+                    key = None
 
-            if fallback_to_env_vars and key is None:
-                key = os.getenv(params[field])
-                if key:
-                    await logger.ainfo(f"Using environment variable {params[field]} for {field}")
-                else:
-                    await logger.aerror(f"Environment variable {params[field]} is not set.")
+                if fallback_to_env_vars and key is None:
+                    key = os.getenv(params[field])
+                    if key:
+                        logger.info(f"Using environment variable {params[field]} for {field}")
+                    else:
+                        logger.error(f"Environment variable {params[field]} is not set.")
 
-            params[field] = key if key is not None else None
-            if key is None:
-                await logger.awarning(f"Could not get value for {field}. Setting it to None.")
+                params[field] = key if key is not None else None
+                if key is None:
+                    logger.warning(f"Could not get value for {field}. Setting it to None.")
 
         return params
 
@@ -192,25 +338,9 @@ async def build_custom_component(params: dict, custom_component: CustomComponent
     raw = post_process_raw(raw, artifact_type)
     artifact = {"repr": custom_repr, "raw": raw, "type": artifact_type}
 
-    if custom_component._vertex is not None:  # noqa: SLF001
-        vertex = custom_component._vertex  # noqa: SLF001
-        output_name = vertex.outputs[0].get("name") if vertex.outputs else "output"
-
-        # Update artifacts
-        if hasattr(custom_component, "set_artifacts"):
-            custom_component.set_artifacts({output_name: artifact})
-        elif hasattr(custom_component, "artifacts"):
-            custom_component.artifacts = {output_name: artifact}  # type: ignore[attr-defined]
-        else:
-            custom_component._artifacts = {output_name: artifact}  # noqa: SLF001
-
-        # Update results
-        if hasattr(custom_component, "set_results"):
-            custom_component.set_results({output_name: build_result})
-        elif hasattr(custom_component, "results"):
-            custom_component.results = {output_name: build_result}  # type: ignore[attr-defined]
-        else:
-            custom_component._results = {output_name: build_result}  # noqa: SLF001
+    if custom_component.get_vertex() is not None:
+        custom_component.set_artifacts({custom_component.get_vertex().outputs[0].get("name"): artifact})
+        custom_component.set_results({custom_component.get_vertex().outputs[0].get("name"): build_result})
         return custom_component, build_result, artifact
 
     msg = "Custom component does not have a vertex"

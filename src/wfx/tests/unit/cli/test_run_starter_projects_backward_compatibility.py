@@ -1,6 +1,6 @@
-"""Test run command with starter project templates from 1.0.0 for backwards compatibility.
+"""Test run command with starter project templates from 1.6.0 for backwards compatibility.
 
-Tests that all starter project JSON files from tag 1.0.0 can be loaded by wfx run command
+Tests that all starter project JSON files from tag 1.6.0 can be loaded by wfx run command
 without import errors for primeagent modules. We expect execution errors
 (missing API keys, etc.) but no import/module errors.
 
@@ -10,9 +10,8 @@ This ensures backwards compatibility with existing starter projects.
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
-
 from wfx.__main__ import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -21,7 +20,7 @@ def get_starter_projects_path() -> Path:
     """Get path to starter projects directory.
 
     Returns:
-        Path to the 1.0.0 starter projects directory in tests/data.
+        Path to the 1.6.0 starter projects directory in tests/data.
     """
     test_file_path = Path(__file__).resolve()
     return test_file_path.parent.parent.parent / "data" / "starter_projects_1_6_0"
@@ -39,35 +38,36 @@ def get_starter_project_files():
 
 
 class TestRunStarterProjectsBackwardCompatibility:
-    """Test run command with starter project templates from 1.0.0 for backwards compatibility."""
+    """Test run command with starter project templates from 1.6.0 for backwards compatibility."""
 
     def test_starter_projects_1_6_0_exist(self):
-        """Test that 1.0.0 starter projects directory exists and has templates."""
+        """Test that 1.6.0 starter projects directory exists and has templates."""
         path = get_starter_projects_path()
         if not path.exists():
-            pytest.fail(f"1.0.0 starter projects cache directory not found: {path}")
+            pytest.fail(f"1.6.0 starter projects cache directory not found: {path}")
 
         templates = get_starter_project_files()
         if len(templates) == 0:
-            pytest.fail(f"No 1.0.0 starter project files found in cache: {path}")
+            pytest.fail(f"No 1.6.0 starter project files found in cache: {path}")
 
     @pytest.mark.parametrize("template_file", get_starter_project_files(), ids=lambda x: x.name)
     def test_run_1_6_0_starter_project_no_import_errors(self, template_file):
-        """Test that 1.0.0 starter project can be loaded without primeagent or wfx import errors.
+        """Test that 1.6.0 starter project can be loaded without primeagent or wfx import errors.
 
         We expect execution errors (missing API keys, missing inputs, etc.)
         but there should be NO errors about importing primeagent or wfx modules.
 
-        Note: Some 1.0.0 starter projects contain components with import bugs that were
+        Note: Some 1.6.0 starter projects contain components with import bugs that were
         fixed in later versions. These are marked as expected failures.
         """
-        # Known failing starter projects due to component-level import bugs in 1.0.0
+        # Known failing starter projects due to component-level import bugs in 1.6.0
         known_failing_projects = {
-            "News Aggregator.json": "Contains SaveToFile component with primeagent.api import bug (fixed in later)"
+            "News Aggregator.json": "Contains SaveToFile component with primeagent.api import bug "
+            "(fixed in later versions)"
         }
 
         if template_file.name in known_failing_projects:
-            pytest.xfail(f"Known 1.0.0 component bug: {known_failing_projects[template_file.name]}")
+            pytest.xfail(f"Known 1.6.0 component bug: {known_failing_projects[template_file.name]}")
         # Run the command with --no-check-variables to skip variable validation
         # Use verbose mode to get detailed error messages in stderr
         result = runner.invoke(
@@ -91,9 +91,7 @@ class TestRunStarterProjectsBackwardCompatibility:
                     if "primeagent" in line and ("No module named" in line or "Module" in line):
                         error_line = line.strip()
                         break
-                pytest.fail(
-                    f"Primeagent import error found in 1.0.0 template {template_file.name}.\nError: {error_line}"
-                )
+                pytest.fail(f"Primeagent import error found in 1.6.0 template {template_file.name}.\nError: {error_line}")
 
             # Check for wfx import errors (these indicate structural issues)
             if "No module named 'wfx." in all_output or "Module wfx." in all_output:
@@ -126,7 +124,7 @@ class TestRunStarterProjectsBackwardCompatibility:
 
                 error_detail = "\n".join(unique_errors[:5])  # Show first 5 unique wfx errors
                 pytest.fail(
-                    f"WFX import error found in 1.0.0 template {template_file.name}.\n"
+                    f"WFX import error found in 1.6.0 template {template_file.name}.\n"
                     f"This indicates wfx internal structure issues.\n"
                     f"Missing modules:\n{error_detail}"
                 )
@@ -139,11 +137,11 @@ class TestRunStarterProjectsBackwardCompatibility:
                     if "cannot import name" in line:
                         error_line = line.strip()
                         break
-                pytest.fail(f"Import error found in 1.0.0 template {template_file.name}.\nError: {error_line}")
+                pytest.fail(f"Import error found in 1.6.0 template {template_file.name}.\nError: {error_line}")
 
     @pytest.mark.parametrize("template_file", get_starter_project_files(), ids=lambda x: x.name)
     def test_run_1_6_0_starter_project_format_options(self, template_file):
-        """Test that 1.0.0 starter projects can be run with different output formats.
+        """Test that 1.6.0 starter projects can be run with different output formats.
 
         This tests that the basic command parsing works, even if execution fails.
         """
@@ -160,7 +158,7 @@ class TestRunStarterProjectsBackwardCompatibility:
 
             # Check that we got some output (even if it's an error)
             if len(result.output) == 0:
-                pytest.fail(f"No output for 1.0.0 template {template_file.name} with format {fmt}")
+                pytest.fail(f"No output for 1.6.0 template {template_file.name} with format {fmt}")
 
     @pytest.mark.xfail(reason="CLI --format option doesn't apply to error messages")
     @pytest.mark.parametrize("template_file", get_starter_project_files()[:1], ids=lambda x: x.name)
@@ -221,12 +219,10 @@ class TestRunStarterProjectsBackwardCompatibility:
             )
 
     @pytest.mark.xfail(
-        reason=(
-            "1.0.0 basic templates have primeagent import issues - components expect primeagent package to be available"
-        )
+        reason="1.6.0 basic templates have primeagent import issues - components expect primeagent package to be available"
     )
     def test_run_basic_1_6_0_starter_projects_detailed(self):
-        """Test basic 1.0.0 starter projects that should have minimal dependencies."""
+        """Test basic 1.6.0 starter projects that should have minimal dependencies."""
         basic_templates = [
             "Basic Prompting.json",
             "Basic Prompt Chaining.json",
@@ -250,17 +246,17 @@ class TestRunStarterProjectsBackwardCompatibility:
 
             # More specific checks for these basic templates
             if "No module named 'primeagent'" in all_output:
-                pytest.fail(f"Primeagent import error in 1.0.0 template {template_name}")
+                pytest.fail(f"Primeagent import error in 1.6.0 template {template_name}")
 
             # Check for module not found errors specifically related to primeagent
             # (Settings service errors are runtime errors, not import errors)
             if "ModuleNotFoundError" in all_output and "primeagent" in all_output and "wfx.services" not in all_output:
                 # This is an actual primeagent import error, not an internal wfx error
-                pytest.fail(f"Module not found error for primeagent in 1.0.0 template {template_name}")
+                pytest.fail(f"Module not found error for primeagent in 1.6.0 template {template_name}")
 
     @pytest.mark.parametrize("template_file", get_starter_project_files(), ids=lambda x: x.name)
     def test_run_1_6_0_starter_project_with_stdin(self, template_file):
-        """Test loading 1.0.0 starter projects via stdin."""
+        """Test loading 1.6.0 starter projects via stdin."""
         with template_file.open(encoding="utf-8") as f:
             json_content = f.read()
 
@@ -272,16 +268,16 @@ class TestRunStarterProjectsBackwardCompatibility:
 
         # Check that the command attempted to process the input
         if len(result.output) == 0:
-            pytest.fail("No output from 1.0.0 stdin test")
+            pytest.fail("No output from 1.6.0 stdin test")
 
         # Verify no import errors
         all_output = result.output
         if "No module named 'primeagent'" in all_output:
-            pytest.fail("Primeagent import error in 1.0.0 stdin test")
+            pytest.fail("Primeagent import error in 1.6.0 stdin test")
 
     @pytest.mark.parametrize("template_file", get_starter_project_files(), ids=lambda x: x.name)
     def test_run_1_6_0_starter_project_inline_json(self, template_file):
-        """Test loading 1.0.0 starter projects via --flow-json option."""
+        """Test loading 1.6.0 starter projects via --flow-json option."""
         with template_file.open(encoding="utf-8") as f:
             json_content = f.read()
 
@@ -292,9 +288,9 @@ class TestRunStarterProjectsBackwardCompatibility:
 
         # Check that the command attempted to process the input
         if len(result.output) == 0:
-            pytest.fail("No output from 1.0.0 inline JSON test")
+            pytest.fail("No output from 1.6.0 inline JSON test")
 
         # Verify no import errors
         all_output = result.output
         if "No module named 'primeagent'" in all_output:
-            pytest.fail("Primeagent import error in 1.0.0 inline JSON test")
+            pytest.fail("Primeagent import error in 1.6.0 inline JSON test")

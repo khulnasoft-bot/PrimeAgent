@@ -2,7 +2,6 @@ import copy
 
 import pytest
 from langchain_core.documents import Document
-
 from wfx.schema import Data
 
 

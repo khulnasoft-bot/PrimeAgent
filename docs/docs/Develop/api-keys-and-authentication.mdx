@@ -27,6 +27,10 @@ You can use Primeagent API keys to interact with Primeagent programmatically.
 
 By default, most Primeagent API endpoints, such as `/v1/run/$FLOW_ID`, require authentication with a Primeagent API key.
 
+Primeagent validates API keys against keys stored in the database, but you can configure Primeagent to validate API keys against an environment variable instead.
+For more information, see [`PRIMEAGENT_API_KEY_SOURCE`](#primeagent-api-key-source).
+
+To require API key authentication for flow webhook endpoints, use the [`PRIMEAGENT_WEBHOOK_AUTH_ENABLE`](/webhook#require-authentication-for-webhooks) environment variable.
 To configure authentication for Primeagent MCP servers, see [Use Primeagent as an MCP server](/mcp-server).
 
 ### Primeagent API key permissions
@@ -38,6 +42,7 @@ A Primeagent API key cannot be used to access resources outside of your own Prim
 In single-user environments, you are always a superuser, and your Primeagent API keys always have superuser privileges.
 
 In multi-user environments, users who aren't superusers cannot use their API keys to access other users' resources.
+Superusers can only run their own flows, and cannot run flows owned by other users.
 You must [start your Primeagent server with authentication enabled](#start-a-primeagent-server-with-authentication-enabled) to allow user management and creation of non-superuser accounts.
 
 ### Create a Primeagent API key
@@ -143,7 +148,7 @@ Additionally, when [exporting flows](/concepts-flows-import), you can choose to 
 
 This section describes the available authentication configuration variables.
 
-You can use the [`.env.example`](https://github.com/khulnasoft/primeagent/blob/main/.env.example) file in the Primeagent repository as a template for your own `.env` file.
+You can use the [`.env.example`](https://github.com/khulnasoft-bot/primeagent/blob/main/.env.example) file in the Primeagent repository as a template for your own `.env` file.
 
 ### PRIMEAGENT_AUTO_LOGIN {#primeagent-auto-login}
 
@@ -282,6 +287,122 @@ PRIMEAGENT_NEW_USER_IS_ACTIVE=False
 Only superusers can manage user accounts for a Primeagent server, but user management only matters if your server has authentication enabled.
 For more information, see [Start a Primeagent server with authentication enabled](#start-a-primeagent-server-with-authentication-enabled).
 
+### PRIMEAGENT_API_KEY_SOURCE {#primeagent-api-key-source}
+
+This variable controls how Primeagent validates API keys.
+
+| Value | Description |
+|-------|-------------|
+| `db` (default) | Validates API keys against [Primeagent API keys](#primeagent-api-keys) stored in the database. This is the standard behavior where users create and manage API keys through the Primeagent UI or CLI. |
+| `env` | Validates API keys against the `PRIMEAGENT_API_KEY` environment variable. Useful for Kubernetes deployments, CI/CD pipelines, or any environment where you want to inject a pre-defined API key without database configuration. |
+
+By default, Primeagent validates the `x-api-key` header against the Primeagent database with `PRIMEAGENT_API_KEY_SOURCE=db`.
+When using database-based validation, you can create multiple keys with per-user permissions, track usage, and manage keys through the Primeagent UI or CLI.
+
+When `PRIMEAGENT_API_KEY_SOURCE=env`, Primeagent validates the `x-api-key` header against the value of the `PRIMEAGENT_API_KEY` environment variable.
+This means Primeagent runs securely in stateless environments, such as with WFX or Kubernetes secrets.
+
+When `PRIMEAGENT_API_KEY_SOURCE=env`, only a single API key can be used for the deployment. All authenticated requests use the same API key, and successful authentication grants superuser privileges.
+This mode is designed for single-tenant deployments or automated systems, not multi-user environments where different users need different access levels. To rotate your keys, update the environment variable and restart the Primeagent server.
+
+To enable environment-based API key validation:
+
+1. In the Primeagent `.env` file, set the API key source to `env`:
+
+    ```text
+    PRIMEAGENT_API_KEY_SOURCE=env
+    ```
+
+2. In the Primeagent `.env` file, set the API key value:
+
+    ```text
+    PRIMEAGENT_API_KEY=your-secure-api-key
+    ```
+
+3. Use the API key in your requests:
+
+    ```shell
+    curl -X POST \
+      "http://PRIMEAGENT_SERVER_ADDRESS/api/v1/run/FLOW_ID?stream=false" \
+      -H "Content-Type: application/json" \
+      -H "x-api-key: PRIMEAGENT_API_KEY" \
+      -d '{"inputs": {"text":""}, "tweaks": {}}'
+    ```
+
+    Replace `PRIMEAGENT_SERVER_ADDRESS`, `FLOW_ID`, and `PRIMEAGENT_API_KEY` with the values from your deployment.
+
+<details>
+<summary>Kubernetes deployment example</summary>
+
+To configure an environment-based API key in a Kubernetes Secret, do the following:
+
+1. Create a Kubernetes Secret with your API key:
+
+    ```yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: primeagent-api-key
+    type: Opaque
+    stringData:
+      api-key: "YOUR_API_KEY"
+    ```
+
+    Replace `YOUR_API_KEY` with the `PRIMEAGENT_API_KEY` value from the Primeagent `.env` file.
+
+2. Reference the `primeagent-api-key` Secret in your Kubernetes deployment:
+
+    ```yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: primeagent
+    spec:
+      template:
+        spec:
+          containers:
+          - name: primeagent
+            image: khulnasoft/primeagent:latest
+            env:
+            - name: PRIMEAGENT_API_KEY_SOURCE
+              value: "env"
+            - name: PRIMEAGENT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: primeagent-api-key
+                  key: api-key
+    ```
+
+</details>
+
+<details>
+<summary>Docker Compose example</summary>
+
+To configure an environment-based API key in Docker Compose, do the following:
+
+1. Set the API key in your Primeagent `.env` file.
+
+    ```text
+    PRIMEAGENT_API_KEY=your-secure-api-key
+    ```
+
+    Replace `YOUR_API_KEY` with your actual Primeagent API key value.
+
+2. Create or update your `docker-compose.yml` file to set `PRIMEAGENT_API_KEY_SOURCE=env` and reference the `PRIMEAGENT_API_KEY`.
+
+    ```yaml
+    services:
+      primeagent:
+        image: khulnasoft/primeagent:latest
+        environment:
+          - PRIMEAGENT_API_KEY_SOURCE=env
+          - PRIMEAGENT_API_KEY=${PRIMEAGENT_API_KEY}
+        ports:
+          - "7860:7860"
+    ```
+
+</details>
+
 ### PRIMEAGENT_CORS_* {#cors-configuration-for-authentication}
 
 Cross-Origin Resource Sharing (CORS) configuration controls how authentication credentials are handled when your Primeagent frontend and backend are served from different origins.
@@ -311,12 +432,36 @@ You can also specify allowed headers and methods, if needed.
 For example:
 
 ```text
-PRIMEAGENT_CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+PRIMEAGENT_CORS_ORIGINS=["https://yourdomain.com","https://app.yourdomain.com"]
 PRIMEAGENT_CORS_ALLOW_CREDENTIALS=True
-PRIMEAGENT_CORS_ALLOW_HEADERS=Content-Type,Authorization
-PRIMEAGENT_CORS_ALLOW_METHODS=GET,POST,PUT
+PRIMEAGENT_CORS_ALLOW_HEADERS=["Content-Type","Authorization"]
+PRIMEAGENT_CORS_ALLOW_METHODS=["GET","POST","PUT"]
 ```
 :::
+
+### SSRF protection {#ssrf-protection}
+
+The following environment variables configure Server-Side Request Forgery (SSRF) protection for the [**API Request** component](/api-request).
+SSRF protection prevents requests to internal or private network resources, such as private IP ranges, loopback addresses, and cloud metadata endpoints.
+
+| Variable | Format | Default | Description |
+|----------|--------|---------|-------------|
+| `PRIMEAGENT_SSRF_PROTECTION_ENABLED` | Boolean | `False` | Enable SSRF protection for the **API Request** component. When enabled, the component blocks requests to private IP addresses. When disabled, requests are not blocked. |
+| `PRIMEAGENT_SSRF_ALLOWED_HOSTS` | List[String] | Not set | A comma-separated list of allowed hosts, IP addresses, or CIDR ranges that can bypass SSRF protection checks. For example: `192.168.1.0/24,10.0.0.5,*.internal.company.local`.|
+
+### PRIMEAGENT_WEBHOOK_AUTH_ENABLE {#primeagent-webhook-auth-enable}
+
+This variable controls whether API key authentication is required for webhook endpoints.
+
+| Variable | Format | Default | Description |
+|----------|--------|---------|-------------|
+| `PRIMEAGENT_WEBHOOK_AUTH_ENABLE` | Boolean | `False` | When `True`, webhook endpoints require API key authentication and validate that the authenticated user owns the flow being executed. When `False`, no Primeagent API key is required and all requests to the webhook endpoint are treated as being sent by the flow owner. |
+
+By default, webhooks run as the flow owner without authentication with `PRIMEAGENT_WEBHOOK_AUTH_ENABLE=False`.
+
+To require API key authentication for webhooks, in your Primeagent `.env` file, set `PRIMEAGENT_WEBHOOK_AUTH_ENABLE=True`.
+
+When webhook authentication is enabled, you must provide a Primeagent API key with each webhook request as an HTTP header or query parameter. For more information, see [Require authentication for webhooks](/webhook#require-authentication-for-webhooks).
 
 ## Start a Primeagent server with authentication enabled
 
@@ -353,7 +498,7 @@ Additionally, you must sign in as a superuser to manage users and [create a Prim
 
     If you don't set a secret key, Primeagent generates one automatically, but this isn't recommended for production environments.
 
-    For instructions on generating at setting a secret key, see [`PRIMEAGENT_SECRET_KEY`](#primeagent-secret-key).
+    For instructions on generating and setting a secret key, see [`PRIMEAGENT_SECRET_KEY`](#primeagent-secret-key).
 
 4. Save your `.env` file with the populated variables. For example:
 

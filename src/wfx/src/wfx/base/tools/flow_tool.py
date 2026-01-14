@@ -34,7 +34,9 @@ class FlowTool(BaseTool):
         return schema.schema()["properties"]
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:  # type: ignore[misc]
+    def get_input_schema(  # type: ignore[misc]
+        self, config: RunnableConfig | None = None
+    ) -> type[BaseModel]:
         """The tool's input schema."""
         if self.args_schema is not None:
             return self.args_schema

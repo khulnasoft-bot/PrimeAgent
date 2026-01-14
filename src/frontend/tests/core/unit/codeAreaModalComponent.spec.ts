@@ -1,7 +1,5 @@
 import { expect } from "@playwright/test";
 import { test } from "../../fixtures";
-import { addLegacyComponents } from "../../utils/add-legacy-components";
-import { adjustScreenView } from "../../utils/adjust-screen-view";
 import { awaitBootstrapTest } from "../../utils/await-bootstrap-test";
 
 test(
@@ -21,7 +19,7 @@ test(
     await page.waitForSelector('[data-testid="zoom_out"]', {
       timeout: 3000,
     });
-    await page.getByTestId("canvas_controls_dropdown").click();
+    await page.getByTestId("canvas_controls_dropdown").click({ force: true });
 
     await page.getByTestId("sidebar-custom-component-button").click();
 
@@ -42,7 +40,7 @@ from primeagent.schema.message import Message
 class CustomComponent(Component):
     display_name = "Custom Component"
     description = "Use as a template to create your own component."
-    documentation: str = "https://primeagent-docs.khulnasoft.com/components-custom-components"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/components-custom-components"
     icon = "custom_components"
     name = "CustomComponent"
 

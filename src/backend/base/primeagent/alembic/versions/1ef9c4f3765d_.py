@@ -1,20 +1,15 @@
-"""Migration to add a new column to the user table.
-
-Revision ID: 1ef9c4f3765d
+"""Revision ID: 1ef9c4f3765d
 Revises: fd531f8868b1
 Create Date: 2023-12-04 15:00:27.968998
+
 """
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from primeagent.utils import migration
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+from primeagent.utils import migration
 
 # revision identifiers, used by Alembic.
 revision: str = "1ef9c4f3765d"

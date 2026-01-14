@@ -2,7 +2,6 @@ import copy
 import json
 
 import pytest
-
 from wfx.graph import Graph
 from wfx.graph.graph.utils import (
     find_last_node,

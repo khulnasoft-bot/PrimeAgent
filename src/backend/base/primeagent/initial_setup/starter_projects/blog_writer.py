@@ -2,8 +2,9 @@ from textwrap import dedent
 
 from wfx.components.data import URLComponent
 from wfx.components.input_output import ChatOutput, TextInputComponent
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import ParserComponent, PromptComponent
+from wfx.components.processing import ParserComponent
 from wfx.graph import Graph
 
 
@@ -20,7 +21,7 @@ def blog_writer_graph(template: str | None = None):
 Blog:
 """)
     url_component = URLComponent()
-    url_component.set(urls=["https://primeagent.khulnasoft.com/", "https://primeagent-docs.khulnasoft.com/"])
+    url_component.set(urls=["https://primeagent.khulnasoft.com/", "https://docs-primeagent.khulnasoft.com/"])
     parse_data_component = ParserComponent()
     parse_data_component.set(input_data=url_component.fetch_content)
 

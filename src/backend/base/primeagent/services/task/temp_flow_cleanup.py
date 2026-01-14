@@ -4,8 +4,8 @@ import asyncio
 import contextlib
 from typing import TYPE_CHECKING
 
-from sqlmodel import col, delete, select
 from wfx.log.logger import logger
+from sqlmodel import col, delete, select
 
 from primeagent.services.database.models.message.model import MessageTable
 from primeagent.services.database.models.transactions.model import TransactionTable
@@ -63,12 +63,10 @@ async def cleanup_orphaned_records() -> None:
                         except Exception as exc:  # noqa: BLE001
                             logger.error(f"Failed to list files for flow {flow_id}: {exc!s}")
 
-                    await session.commit()
                     logger.debug(f"Successfully deleted orphaned records from {table.__name__}")
 
             except Exception as exc:  # noqa: BLE001
                 logger.error(f"Error cleaning up orphaned records in {table.__name__}: {exc!s}")
-                await session.rollback()
 
 
 class CleanupWorker:

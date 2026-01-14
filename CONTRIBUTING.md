@@ -4,7 +4,7 @@ Thank you for your interest in contributing!
 
 ## How to Contribute
 
-1. Fork the [Primeagent GitHub repository](https://github.com/khulnasoft/primeagent).
+1. Fork the [Primeagent GitHub repository](https://github.com/khulnasoft-bot/primeagent).
 2. Create a new branch for your changes.
 3. Submit a pull request to the `main` branch with a clear title and description.
 Reference any issues fixed, for example `Fixes #1234`.

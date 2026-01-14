@@ -1,7 +1,6 @@
 import asyncio
 
 import pytest
-
 from wfx.components.input_output import ChatOutput
 from wfx.custom.custom_component.component import Component
 from wfx.events.event_manager import EventManager

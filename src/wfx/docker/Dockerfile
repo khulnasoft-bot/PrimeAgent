@@ -63,8 +63,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 LABEL org.opencontainers.image.title=wfx
 LABEL org.opencontainers.image.authors=['Primeagent']
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.url=https://github.com/khulnasoft/primeagent
-LABEL org.opencontainers.image.source=https://github.com/khulnasoft/primeagent
+LABEL org.opencontainers.image.url=https://github.com/khulnasoft-bot/primeagent
+LABEL org.opencontainers.image.source=https://github.com/khulnasoft-bot/primeagent
 LABEL org.opencontainers.image.description="WFX - Primeagent Executor CLI Tool"
 
 USER wfx

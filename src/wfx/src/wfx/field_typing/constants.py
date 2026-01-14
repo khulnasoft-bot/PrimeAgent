@@ -209,6 +209,7 @@ from wfx.io import (
     TableInput,
 )
 from wfx.schema.data import Data
+from wfx.schema.dataframe import DataFrame
 """
 
 if importlib.util.find_spec("langchain") is not None:

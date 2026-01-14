@@ -1,7 +1,6 @@
-import { Cookies } from "react-cookie";
 import { PRIMEAGENT_ACCESS_TOKEN } from "@/constants/constants";
+import { cookieManager } from "@/utils/cookie-manager";
 
 export const customGetAccessToken = () => {
-  const cookies = new Cookies();
-  return cookies.get(PRIMEAGENT_ACCESS_TOKEN);
+  return cookieManager.get(PRIMEAGENT_ACCESS_TOKEN);
 };

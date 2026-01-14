@@ -1,5 +1,5 @@
 import pytest
-from wfx.components.processing import PythonREPLComponent
+from wfx.components.utilities.python_repl_core import PythonREPLComponent
 
 from tests.base import DID_NOT_EXIST, ComponentTestBaseWithoutClient
 

@@ -6,12 +6,14 @@ from datetime import timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Any
 
-from fastapi import Depends, HTTPException, Query
+from fastapi import Depends, HTTPException, Path, Query
 from fastapi_pagination import Params
-from sqlalchemy import delete
-from sqlmodel.ext.asyncio.session import AsyncSession
 from wfx.graph.graph.base import Graph
 from wfx.log.logger import logger
+from wfx.services.deps import injectable_session_scope, injectable_session_scope_readonly, session_scope
+from wfx.utils.validate_cloud import raise_error_if_astra_cloud_disable_component
+from sqlalchemy import delete
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from primeagent.services.auth.utils import get_current_active_user, get_current_active_user_mcp
 from primeagent.services.database.models.flow.model import Flow
@@ -19,7 +21,6 @@ from primeagent.services.database.models.message.model import MessageTable
 from primeagent.services.database.models.transactions.model import TransactionTable
 from primeagent.services.database.models.user.model import User
 from primeagent.services.database.models.vertex_builds.model import VertexBuildTable
-from primeagent.services.deps import get_session, session_scope
 from primeagent.services.store.utils import get_lf_version_from_pypi
 from primeagent.utils.constants import PRIMEAGENT_GLOBAL_VAR_HEADER_PREFIX
 
@@ -35,7 +36,26 @@ MIN_PAGE_SIZE = 1
 
 CurrentActiveUser = Annotated[User, Depends(get_current_active_user)]
 CurrentActiveMCPUser = Annotated[User, Depends(get_current_active_user_mcp)]
-DbSession = Annotated[AsyncSession, Depends(get_session)]
+# DbSession with auto-commit for write operations
+DbSession = Annotated[AsyncSession, Depends(injectable_session_scope)]
+# DbSessionReadOnly for read-only operations (no auto-commit, reduces lock contention)
+DbSessionReadOnly = Annotated[AsyncSession, Depends(injectable_session_scope_readonly)]
+
+
+def _get_validated_file_name(file_name: str = Path()) -> str:
+    """Validate file_name path parameter to prevent path traversal attacks."""
+    if ".." in file_name or "/" in file_name or "\\" in file_name:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file name. Use a simple file name without directory paths or '..'.",
+        )
+    return file_name
+
+
+ValidatedFileName = Annotated[str, Depends(_get_validated_file_name)]
+
+# Message to raise if we're in an Astra cloud environment and a component or endpoint is not supported
+disable_endpoint_in_astra_cloud_msg = "This endpoint is not supported in Astra cloud environment."
 
 
 class EventDeliveryType(str, Enum):
@@ -392,9 +412,9 @@ def extract_global_variables_from_headers(headers) -> dict[str, str]:
         Dictionary mapping variable names (uppercase) to their values
 
     Example:
-        headers = {"X-PRIMEAGENT-GLOBAL-VAR-API-KEY": "<API_KEY>", "Content-Type": "application/json"}
+        headers = {"X-PRIMEAGENT-GLOBAL-VAR-API-KEY": "secret", "Content-Type": "application/json"}
         result = extract_global_variables_from_headers(headers)
-        # Returns: {"API_KEY": "<API_KEY>"}
+        # Returns: {"API_KEY": "secret"}
     """
     variables: dict[str, str] = {}
 
@@ -409,3 +429,11 @@ def extract_global_variables_from_headers(headers) -> dict[str, str]:
         logger.exception("Failed to extract global variables from headers: %s", exc)
 
     return variables
+
+
+def raise_error_if_astra_cloud_env():
+    """Raise an error if we're in an Astra cloud environment."""
+    try:
+        raise_error_if_astra_cloud_disable_component(disable_endpoint_in_astra_cloud_msg)
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e

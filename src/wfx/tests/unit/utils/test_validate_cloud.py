@@ -4,7 +4,6 @@ import os
 from unittest.mock import patch
 
 import pytest
-
 from wfx.utils.validate_cloud import raise_error_if_astra_cloud_disable_component
 
 

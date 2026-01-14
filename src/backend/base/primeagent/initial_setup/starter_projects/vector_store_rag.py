@@ -4,8 +4,9 @@ from wfx.components.data import FileComponent
 from wfx.components.datastax import AstraDBVectorStoreComponent
 from wfx.components.input_output import ChatInput, ChatOutput
 from wfx.components.models import LanguageModelComponent
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai import OpenAIEmbeddingsComponent
-from wfx.components.processing import ParserComponent, PromptComponent
+from wfx.components.processing import ParserComponent
 from wfx.components.processing.split_text import SplitTextComponent
 from wfx.graph import Graph
 

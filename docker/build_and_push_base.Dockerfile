@@ -93,8 +93,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 LABEL org.opencontainers.image.title=primeagent
 LABEL org.opencontainers.image.authors=['Primeagent']
 LABEL org.opencontainers.image.licenses=MIT
-LABEL org.opencontainers.image.url=https://github.com/khulnasoft/primeagent
-LABEL org.opencontainers.image.source=https://github.com/khulnasoft/primeagent
+LABEL org.opencontainers.image.url=https://github.com/khulnasoft-bot/primeagent
+LABEL org.opencontainers.image.source=https://github.com/khulnasoft-bot/primeagent
 
 USER user
 WORKDIR /app

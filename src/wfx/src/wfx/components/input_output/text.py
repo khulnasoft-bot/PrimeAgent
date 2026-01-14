@@ -6,7 +6,7 @@ from wfx.schema.message import Message
 class TextInputComponent(TextComponent):
     display_name = "Text Input"
     description = "Get user text inputs."
-    documentation: str = "https://primeagent-docs.khulnasoft.com/components-io#text-input"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/text-input-and-output"
     icon = "type"
     name = "TextInput"
 

@@ -5,7 +5,6 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from wfx.events.event_manager import (
     EventManager,
     create_default_event_manager,

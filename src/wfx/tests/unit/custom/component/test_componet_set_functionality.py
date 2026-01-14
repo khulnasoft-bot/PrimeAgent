@@ -1,5 +1,4 @@
 import pytest
-
 from wfx.custom.custom_component.component import Component
 from wfx.inputs.inputs import MessageTextInput, StrInput
 

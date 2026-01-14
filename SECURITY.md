@@ -2,7 +2,7 @@
 
 ## Security Policy
 
-This security policy applies to all public projects under the khulnasoft organization on GitHub. We prioritize security and continuously work to safeguard our systems. However, vulnerabilities can still exist. If you identify a security issue, please report it to us so we can address it promptly.
+This security policy applies to all public projects under the khulnasoft-bot organization on GitHub. We prioritize security and continuously work to safeguard our systems. However, vulnerabilities can still exist. If you identify a security issue, please report it to us so we can address it promptly.
 
 ### Security/Bugfix Versions
 
@@ -15,7 +15,7 @@ We encourage responsible disclosure of security vulnerabilities. If you find som
 
 ### How to Report
 
-Use the "Report a vulnerability" button under the "Security" tab of the [Primeagent GitHub repository](https://github.com/khulnasoft/primeagent/security). This creates a private communication channel between you and the maintainers.
+Use the "Report a vulnerability" button under the "Security" tab of the [Primeagent GitHub repository](https://github.com/khulnasoft-bot/primeagent/security). This creates a private communication channel between you and the maintainers.
 
 ### Reporting Guidelines
 
@@ -41,6 +41,33 @@ Use the "Report a vulnerability" button under the "Security" tab of the [Primeag
 We appreciate your efforts in helping us maintain a secure platform and look forward to working together to resolve any issues responsibly.
 
 ## Known Vulnerabilities
+
+### Server-Side Request Forgery (SSRF) in API Request Component (Fixed in 1.7.1)
+
+Primeagent's [API Request component](https://docs-primeagent.khulnasoft.com/api-request) allows arbitrary HTTP requests within a flow. In versions < 1.7.1, this component did not block private IP ranges (`127.0.0.1`, `10/172/192` ranges) or cloud metadata endpoints (`169.254.169.254`), enabling Server-Side Request Forgery (SSRF) attacks.
+
+**Potential security impact:**
+- Attackers with API key access can access internal administrative endpoints, metadata services, and internal databases/services
+- Foothold for attacking internal services by abusing inter-service trust
+- Non-blind SSRF: Response bodies are returned to the client, enabling immediate data exfiltration
+
+**CVE**: [CVE-2025-68477](https://nvd.nist.gov/vuln/detail/CVE-2025-68477)
+**GitHub Advisory**: [GHSA-5993-7p27-66g5](https://github.com/khulnasoft-bot/primeagent/security/advisories/GHSA-5993-7p27-66g5)
+**Fixed in**: Primeagent >= 1.7.1
+
+### External Control of File Name or Path (Fixed in 1.7.1)
+
+When creating a flow through the [`/api/v1/flows/`](https://docs-primeagent.khulnasoft.com/api-flows) endpoint, if an arbitrary path is specified in the request body's `fs_path`, the server serializes the flow object into JSON and creates/overwrites a file at that path. In versions < 1.7.1, there is no path restriction, normalization, or allowed directory enforcement, so absolute paths (e.g., `/etc/poc.txt`) are interpreted as-is.
+
+**Potential security impact:**
+- Authenticated arbitrary file write (within server permission scope): Risk of corrupting configuration/log/task files, disrupting application behavior, and tampering with files read by other components
+- Both absolute and relative paths are allowed, enabling base directory traversal
+- Risk of overwriting system files increases in environments with root privileges or weak mount/permission settings
+- File content is limited to Flow JSON, but impact is severe if the target file is parsed by a JSON parser or subject to subsequent processing
+
+**CVE**: [CVE-2025-68478](https://nvd.nist.gov/vuln/detail/CVE-2025-68478)
+**GitHub Advisory**: [GHSA-f43r-cc68-gpx4](https://github.com/khulnasoft-bot/primeagent/security/advisories/GHSA-f43r-cc68-gpx4)
+**Fixed in**: Primeagent >= 1.7.1
 
 ### Environment Variable Loading Bug (Fixed in 1.6.4)
 
@@ -68,7 +95,7 @@ This means an attacker could send malicious code to the endpoint and have it exe
 
 A privilege escalation vulnerability exists in Primeagent containers where an authenticated user with RCE access can invoke the internal CLI command `primeagent superuser` to create a new administrative user. This results in full superuser access, even if the user initially registered through the UI as a regular (non-admin) account.
 
-**CVE**: [CVE-2025-57760](https://github.com/khulnasoft/primeagent/security/advisories/GHSA-4gv9-mp8m-592r)
+**CVE**: [CVE-2025-57760](https://github.com/khulnasoft-bot/primeagent/security/advisories/GHSA-4gv9-mp8m-592r)
 **Fixed in**: Primeagent >= 1.5.1
 
 ### No API key required if running Primeagent with `PRIMEAGENT_AUTO_LOGIN=true` and `PRIMEAGENT_SKIP_AUTH_AUTO_LOGIN=true`
@@ -80,7 +107,7 @@ Setting `PRIMEAGENT_SKIP_AUTH_AUTO_LOGIN=true` and `PRIMEAGENT_AUTO_LOGIN=true` 
 
 `PRIMEAGENT_SKIP_AUTH_AUTO_LOGIN=true` is the default behavior, so users do not need to change existing workflows in 1.5. To update your workflows to require authentication, set `PRIMEAGENT_SKIP_AUTH_AUTO_LOGIN=false`.
 
-For more information, see [API keys and authentication](https://primeagent-docs.khulnasoft.com/api-keys-and-authentication).
+For more information, see [API keys and authentication](https://docs-primeagent.khulnasoft.com/api-keys-and-authentication).
 
 ## Security Configuration Guidelines
 

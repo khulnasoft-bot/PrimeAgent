@@ -104,12 +104,13 @@ export default defineConfig({
   webServer: [
     {
       command:
-        "uv run uvicorn --factory primeagent.main:create_app --host localhost --port 7860 --loop asyncio",
+        "uv run uvicorn --factory primeagent.main:create_app --host localhost --port 7860 --loop asyncio --log-level error --no-access-log",
       port: 7860,
       env: {
         PRIMEAGENT_DATABASE_URL: "sqlite:///./temp",
         PRIMEAGENT_AUTO_LOGIN: "true",
         PRIMEAGENT_DEACTIVATE_TRACING: "true",
+        PRIMEAGENT_LOG_LEVEL: "ERROR",
         DO_NOT_TRACK: "true",
       },
       stdout: "ignore",

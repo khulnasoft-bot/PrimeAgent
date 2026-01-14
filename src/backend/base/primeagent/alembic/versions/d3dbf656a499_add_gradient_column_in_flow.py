@@ -11,6 +11,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 import sqlmodel
 from alembic import op
+
 from primeagent.utils import migration
 
 # revision identifiers, used by Alembic.

@@ -1,8 +1,8 @@
 from wfx.components.crewai.sequential_crew import SequentialCrewComponent
 from wfx.components.crewai.sequential_task_agent import SequentialTaskAgentComponent
 from wfx.components.input_output import ChatOutput, TextInputComponent
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import PromptComponent
 from wfx.components.tools import SearchAPIComponent
 from wfx.graph import Graph
 

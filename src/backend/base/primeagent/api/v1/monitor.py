@@ -12,8 +12,8 @@ from primeagent.schema.message import MessageResponse
 from primeagent.services.auth.utils import get_current_active_user
 from primeagent.services.database.models.flow.model import Flow
 from primeagent.services.database.models.message.model import MessageRead, MessageTable, MessageUpdate
-from primeagent.services.database.models.transactions.crud import transform_transaction_table
-from primeagent.services.database.models.transactions.model import TransactionTable
+from primeagent.services.database.models.transactions.crud import transform_transaction_table_for_logs
+from primeagent.services.database.models.transactions.model import TransactionLogsResponse, TransactionTable
 from primeagent.services.database.models.user.model import User
 from primeagent.services.database.models.vertex_builds.crud import (
     delete_vertex_builds_by_flow_id,
@@ -193,12 +193,12 @@ async def get_transactions(
     flow_id: Annotated[UUID, Query()],
     session: DbSession,
     params: Annotated[Params | None, Depends(custom_params)],
-) -> Page[TransactionTable]:
+) -> Page[TransactionLogsResponse]:
     try:
         stmt = (
             select(TransactionTable)
             .where(TransactionTable.flow_id == flow_id)
-            .order_by(col(TransactionTable.timestamp))
+            .order_by(col(TransactionTable.timestamp).desc())
         )
         import warnings
 
@@ -206,6 +206,6 @@ async def get_transactions(
             warnings.filterwarnings(
                 "ignore", category=DeprecationWarning, module=r"fastapi_pagination\.ext\.sqlalchemy"
             )
-            return await apaginate(session, stmt, params=params, transformer=transform_transaction_table)
+            return await apaginate(session, stmt, params=params, transformer=transform_transaction_table_for_logs)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

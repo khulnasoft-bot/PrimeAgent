@@ -4,12 +4,13 @@ from textwrap import dedent
 
 import pytest
 from wfx.components.data import FileComponent
+from wfx.components.datastax import AstraDBVectorStoreComponent
 from wfx.components.input_output import ChatInput, ChatOutput
+from wfx.components.models_and_agents import PromptComponent
 from wfx.components.openai.openai import OpenAIEmbeddingsComponent
 from wfx.components.openai.openai_chat_model import OpenAIModelComponent
-from wfx.components.processing import ParseDataComponent, PromptComponent
+from wfx.components.processing import ParseDataComponent
 from wfx.components.processing.split_text import SplitTextComponent
-from wfx.components.vectorstores import AstraDBVectorStoreComponent
 from wfx.graph.graph.base import Graph
 from wfx.graph.graph.constants import Finish
 from wfx.schema import Data

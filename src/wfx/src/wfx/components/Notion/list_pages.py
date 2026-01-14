@@ -21,7 +21,7 @@ class NotionListPages(LCToolComponent):
         '{"filter": {"property": "Status", "select": {"equals": "Done"}}, '
         '"sorts": [{"timestamp": "created_time", "direction": "descending"}]}'
     )
-    documentation: str = "https://primeagent-docs.khulnasoft.com/integrations/notion/list-pages"
+    documentation: str = "https://docs-primeagent.khulnasoft.com/bundles-notion"
     icon = "NotionDirectoryLoader"
 
     inputs = [
