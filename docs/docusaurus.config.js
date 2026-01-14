@@ -157,6 +157,7 @@ const config = {
         ],
         theme: {
           primaryColor: "#7528FC",
+          primaryColorDark: "#7528FC", // Force dark mode for Redoc
         },
       },
     ],
