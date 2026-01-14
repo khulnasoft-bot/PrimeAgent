@@ -87,7 +87,7 @@ jobs:
           exit 1
 
       - name: Check out the code at a specific ref
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || inputs.main_version || github.ref }}
           persist-credentials: true
@@ -173,28 +173,28 @@ jobs:
           if [[ "${{ inputs.release_type }}" == "base" || "${{ inputs.release_type }}" == "nightly-base" ]]; then
             # PRIMEAGENT-BASE RELEASE
             echo "docker_tags=khulnasoft/primeagent${nightly_suffix}:base-${{ needs.get-version.outputs.version }},khulnasoft/primeagent${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
-            echo "ghcr_tags=ghcr.io/khulnasoft/primeagent${nightly_suffix}:base-${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
+            echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent${nightly_suffix}:base-${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent${nightly_suffix}:base-latest" >> $GITHUB_OUTPUT
             echo "file=./docker/build_and_push_base.Dockerfile" >> $GITHUB_OUTPUT
           else
             if [[ "${{ inputs.pre_release }}" == "true" ]]; then
               # PRIMEAGENT-MAIN PRE-RELEASE
               echo "docker_tags=khulnasoft/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/khulnasoft/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
+              echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }}" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "${{ inputs.release_type }}" == "main-ep" ]]; then
               # PRIMEAGENT-MAIN (ENTRYPOINT) RELEASE
               echo "docker_tags=khulnasoft/primeagent-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},khulnasoft/primeagent-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
+              echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-ep${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent-ep${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push_ep.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "${{ inputs.release_type }}" == "main" || "${{ inputs.release_type }}" == "nightly-main" ]]; then
               # PRIMEAGENT-MAIN RELEASE
               echo "docker_tags=khulnasoft/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }},khulnasoft/primeagent${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/khulnasoft/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent${nightly_suffix}:latest" >> $GITHUB_OUTPUT
+              echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push.Dockerfile" >> $GITHUB_OUTPUT
             elif [[ "${{ inputs.release_type }}" == "main-all" || "${{ inputs.release_type }}" == "nightly-main-all" ]]; then
               # PRIMEAGENT-MAIN (ALL OPTIONAL DEPS) RELEASE
               echo "docker_tags=khulnasoft/primeagent-all${nightly_suffix}:${{ needs.get-version.outputs.version }},khulnasoft/primeagent-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
-              echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-all${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
+              echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-all${nightly_suffix}:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent-all${nightly_suffix}:latest" >> $GITHUB_OUTPUT
               echo "file=./docker/build_and_push_with_extras.Dockerfile" >> $GITHUB_OUTPUT
             else
               echo "Invalid release type. Exiting the workflow."
@@ -202,11 +202,11 @@ jobs:
             fi
           fi
   build:
-    runs-on: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+    runs-on: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     needs: [get-version, setup]
     steps:
       - name: Check out the code at a specific ref
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || inputs.main_version || github.ref }}
           persist-credentials: true
@@ -289,7 +289,7 @@ jobs:
 
   build_components:
     if: ${{ inputs.release_type == 'main' }}
-    runs-on: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+    runs-on: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     permissions:
       packages: write
     needs: [build, get-version]
@@ -307,15 +307,15 @@ jobs:
             primeagent_image: khulnasoft/primeagent:${{ needs.get-version.outputs.version }}
           - component: ghcr-backend
             dockerfile: ./docker/build_and_push_backend.Dockerfile
-            tags: ghcr.io/khulnasoft/primeagent-backend:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent-backend:latest
-            primeagent_image: ghcr.io/khulnasoft/primeagent:${{ needs.get-version.outputs.version }}
+            tags: ghcr.io/khulnasoft-bot/primeagent-backend:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent-backend:latest
+            primeagent_image: ghcr.io/khulnasoft-bot/primeagent:${{ needs.get-version.outputs.version }}
           - component: ghcr-frontend
             dockerfile: ./docker/frontend/build_and_push_frontend.Dockerfile
-            tags: ghcr.io/khulnasoft/primeagent-frontend:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft/primeagent-frontend:latest
-            primeagent_image: ghcr.io/khulnasoft/primeagent:${{ needs.get-version.outputs.version }}
+            tags: ghcr.io/khulnasoft-bot/primeagent-frontend:${{ needs.get-version.outputs.version }},ghcr.io/khulnasoft-bot/primeagent-frontend:latest
+            primeagent_image: ghcr.io/khulnasoft-bot/primeagent:${{ needs.get-version.outputs.version }}
     steps:
       - name: Check out the code at a specific ref
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || inputs.main_version || github.ref }}
 
@@ -386,7 +386,7 @@ jobs:
           - "3.13"
     steps:
       - name: Check out the code at a specific ref
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || inputs.main_version || github.ref }}
       - name: "Setup Environment"

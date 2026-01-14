@@ -12,10 +12,10 @@ env:
 jobs:
   lint:
     name: Run Ruff Check and Format
-    if: ${{ github.actor != 'github-actions[bot]' || github.actor == 'khulnasoft-bot' }}
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: "Setup Environment"
         uses: astral-sh/setup-uv@v6
         with:
@@ -30,10 +30,10 @@ jobs:
 
   update-starter-projects:
     name: Update Starter Projects
-    if: ${{ github.actor != 'github-actions[bot]' || github.actor == 'khulnasoft-bot' }}
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: "Setup Environment"
         uses: astral-sh/setup-uv@v6
         with:
@@ -55,10 +55,10 @@ jobs:
 
   update-component-index:
     name: Update Component Index
-    if: ${{ github.actor != 'github-actions[bot]' || github.actor == 'khulnasoft-bot' }}
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: "Setup Environment"
         uses: astral-sh/setup-uv@v6
         with:
@@ -76,3 +76,6 @@ jobs:
         run: make build_component_index
 
       - uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
+
+
+

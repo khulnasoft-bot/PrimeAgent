@@ -51,12 +51,12 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -89,7 +89,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent-nightly:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-nightly:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-nightly:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -145,12 +145,12 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -182,7 +182,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent-nightly:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-nightly:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-nightly:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -238,12 +238,12 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
 
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -275,7 +275,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent-nightly-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-nightly-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-nightly-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -337,7 +337,7 @@ jobs:
           prune-cache: false
 
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -358,19 +358,19 @@ jobs:
           version="${{ steps.version.outputs.version }}"
           case "${{ inputs.release_type }}" in
             "nightly-base")
-              echo "final_tags=khulnasoft/primeagent-nightly:base-${version},khulnasoft/primeagent-nightly:base-latest,ghcr.io/khulnasoft/primeagent-nightly:base-${version},ghcr.io/khulnasoft/primeagent-nightly:base-latest" >> $GITHUB_OUTPUT
+              echo "final_tags=khulnasoft/primeagent-nightly:base-${version},khulnasoft/primeagent-nightly:base-latest,ghcr.io/khulnasoft-bot/primeagent-nightly:base-${version},ghcr.io/khulnasoft-bot/primeagent-nightly:base-latest" >> $GITHUB_OUTPUT
               echo "arch_base=khulnasoft/primeagent-nightly:base-${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent-nightly:base-${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-nightly:base-${version}" >> $GITHUB_OUTPUT
               ;;
             "nightly-main")
-              echo "final_tags=khulnasoft/primeagent-nightly:${version},khulnasoft/primeagent-nightly:latest,ghcr.io/khulnasoft/primeagent-nightly:${version},ghcr.io/khulnasoft/primeagent-nightly:latest" >> $GITHUB_OUTPUT
+              echo "final_tags=khulnasoft/primeagent-nightly:${version},khulnasoft/primeagent-nightly:latest,ghcr.io/khulnasoft-bot/primeagent-nightly:${version},ghcr.io/khulnasoft-bot/primeagent-nightly:latest" >> $GITHUB_OUTPUT
               echo "arch_base=khulnasoft/primeagent-nightly:${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent-nightly:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-nightly:${version}" >> $GITHUB_OUTPUT
               ;;
             "nightly-main-all")
-              echo "final_tags=khulnasoft/primeagent-nightly-all:${version},khulnasoft/primeagent-nightly-all:latest,ghcr.io/khulnasoft/primeagent-nightly-all:${version},ghcr.io/khulnasoft/primeagent-nightly-all:latest" >> $GITHUB_OUTPUT
+              echo "final_tags=khulnasoft/primeagent-nightly-all:${version},khulnasoft/primeagent-nightly-all:latest,ghcr.io/khulnasoft-bot/primeagent-nightly-all:${version},ghcr.io/khulnasoft-bot/primeagent-nightly-all:latest" >> $GITHUB_OUTPUT
               echo "arch_base=khulnasoft/primeagent-nightly-all:${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent-nightly-all:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-nightly-all:${version}" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "Error: Invalid release_type: ${{ inputs.release_type }}" >&2

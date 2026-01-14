@@ -30,12 +30,12 @@ jobs:
       checks: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.ref }}
 
       - name: Setup Node.js Environment
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         id: setup-node
         with:
           node-version: ${{ env.NODE_VERSION }}

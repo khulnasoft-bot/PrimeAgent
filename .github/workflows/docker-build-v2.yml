@@ -7,7 +7,7 @@ on:
       release_type:
         required: true
         type: string
-        description: "Release type. One of 'main', 'main-ep', 'base', 'main-all'."
+        description: "Release type. One of 'main', 'main-backend', 'main-frontend', 'main-ep', 'base', 'main-all'."
       pre_release:
         required: false
         type: boolean
@@ -25,11 +25,13 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: "Type of release. One of 'main', 'main-ep', 'base', 'main-all'."
+        description: "Type of release. One of 'main', 'main-backend', 'main-frontend', 'main-ep', 'base', 'main-all'."
         required: true
         type: choice
         options:
           - main
+          - main-backend
+          - main-frontend
           - main-ep
           - base
           - main-all
@@ -61,12 +63,11 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
-
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -91,7 +92,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent:base-${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -147,12 +148,11 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
-
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -177,7 +177,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -224,6 +224,180 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  build-main-backend:
+    name: Build Main Backend Package
+    if: ${{ inputs.release_type == 'main-backend' }}
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: [Primeagent-runner]
+          - arch: arm64
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Environment
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.13"
+          prune-cache: false
+
+      - name: Get version
+        id: version
+        run: |
+          echo "Extracting main version from pyproject.toml"
+          version=$(uv tree 2>/dev/null | grep '^primeagent' | grep -v '^primeagent-base' | cut -d' ' -f2 | sed 's/^v//')
+          echo "Using version: $version"
+          echo version=$version >> $GITHUB_OUTPUT
+
+      - name: Set tags
+        id: tags
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          echo "docker_tags=khulnasoft/primeagent-backend:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-backend:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+
+      - name: Docker cleanup
+        run: |
+          docker system prune -af --volumes || true
+          docker buildx prune -af || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ inputs.push_to_registry }}
+          build-args: |
+            PRIMEAGENT_IMAGE=khulnasoft/primeagent:${{ steps.version.outputs.version }}-${{ matrix.arch }}
+          file: ./docker/build_and_push_backend.Dockerfile
+          tags: ${{ steps.tags.outputs.docker_tags }}
+          platforms: linux/${{ matrix.arch }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.TEMP_GHCR_TOKEN}}
+
+      - name: Build and push to GitHub Container Registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ inputs.push_to_registry }}
+          build-args: |
+            PRIMEAGENT_IMAGE=ghcr.io/khulnasoft-bot/primeagent:${{ steps.version.outputs.version }}-${{ matrix.arch }}
+          file: ./docker/build_and_push_backend.Dockerfile
+          tags: ${{ steps.tags.outputs.ghcr_tags }}
+          platforms: linux/${{ matrix.arch }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-main-frontend:
+    name: Build Main Frontend Package
+    if: ${{ inputs.release_type == 'main-frontend' }}
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: [Primeagent-runner]
+          - arch: arm64
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Environment
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.13"
+          prune-cache: false
+
+      - name: Get version
+        id: version
+        run: |
+          echo "Extracting main version from pyproject.toml"
+          version=$(uv tree 2>/dev/null | grep '^primeagent' | grep -v '^primeagent-base' | cut -d' ' -f2 | sed 's/^v//')
+          echo "Using version: $version"
+          echo version=$version >> $GITHUB_OUTPUT
+
+      - name: Set tags
+        id: tags
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          echo "docker_tags=khulnasoft/primeagent-frontend:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-frontend:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+
+      - name: Docker cleanup
+        run: |
+          docker system prune -af --volumes || true
+          docker buildx prune -af || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ inputs.push_to_registry }}
+          file: ./docker/frontend/build_and_push_frontend.Dockerfile
+          tags: ${{ steps.tags.outputs.docker_tags }}
+          platforms: linux/${{ matrix.arch }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.TEMP_GHCR_TOKEN}}
+
+      - name: Build and push to GitHub Container Registry
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ inputs.push_to_registry }}
+          file: ./docker/frontend/build_and_push_frontend.Dockerfile
+          tags: ${{ steps.tags.outputs.ghcr_tags }}
+          platforms: linux/${{ matrix.arch }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   build-main-ep:
     name: Build Main EP Package
     if: ${{ inputs.release_type == 'main-ep' }}
@@ -233,12 +407,11 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
-
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -263,7 +436,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent-ep:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-ep:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-ep:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -319,11 +492,11 @@ jobs:
           - arch: amd64
             runner: [Primeagent-runner]
           - arch: arm64
-            runner: [self-hosted, linux, ARM64, khulnasoft-arm64-40gb]
+            runner: [self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -348,7 +521,7 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           echo "docker_tags=khulnasoft/primeagent-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
-          echo "ghcr_tags=ghcr.io/khulnasoft/primeagent-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          echo "ghcr_tags=ghcr.io/khulnasoft-bot/primeagent-all:${version}-${{ matrix.arch }}" >> $GITHUB_OUTPUT
 
       - name: Docker cleanup
         run: |
@@ -397,9 +570,17 @@ jobs:
 
   create-manifest:
     name: Create Multi-Arch Manifest
-    needs: [build-base, build-main, build-main-ep, build-main-all]
+    needs:
+      [
+        build-base,
+        build-main,
+        build-main-backend,
+        build-main-frontend,
+        build-main-ep,
+        build-main-all,
+      ]
     runs-on: ubuntu-latest
-    if: ${{ always() && inputs.push_to_registry && (needs.build-base.result == 'success' || needs.build-main.result == 'success' || needs.build-main-ep.result == 'success' || needs.build-main-all.result == 'success') }}
+    if: ${{ always() && inputs.push_to_registry && (needs.build-base.result == 'success' || needs.build-main.result == 'success' || needs.build-main-backend.result == 'success' || needs.build-main-frontend.result == 'success' || needs.build-main-ep.result == 'success' || needs.build-main-all.result == 'success') }}
     steps:
       - name: Setup Environment
         uses: astral-sh/setup-uv@v6
@@ -410,7 +591,7 @@ jobs:
           prune-cache: false
 
       - name: Check out the code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -432,31 +613,49 @@ jobs:
           case "${{ inputs.release_type }}" in
             "base")
               if [[ "${{ inputs.pre_release }}" == "true" ]]; then
-                echo "final_tags=khulnasoft/primeagent:base-${version},ghcr.io/khulnasoft/primeagent:base-${version}" >> $GITHUB_OUTPUT
+                echo "final_tags=khulnasoft/primeagent:base-${version},ghcr.io/khulnasoft-bot/primeagent:base-${version}" >> $GITHUB_OUTPUT
               else
-                echo "final_tags=khulnasoft/primeagent:base-${version},khulnasoft/primeagent:base-latest,ghcr.io/khulnasoft/primeagent:base-${version},ghcr.io/khulnasoft/primeagent:base-latest" >> $GITHUB_OUTPUT
+                echo "final_tags=khulnasoft/primeagent:base-${version},khulnasoft/primeagent:base-latest,ghcr.io/khulnasoft-bot/primeagent:base-${version},ghcr.io/khulnasoft-bot/primeagent:base-latest" >> $GITHUB_OUTPUT
               fi
               echo "arch_base=khulnasoft/primeagent:base-${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent:base-${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent:base-${version}" >> $GITHUB_OUTPUT
               ;;
             "main")
               if [[ "${{ inputs.pre_release }}" == "true" ]]; then
-                echo "final_tags=khulnasoft/primeagent:${version},ghcr.io/khulnasoft/primeagent:${version}" >> $GITHUB_OUTPUT
+                echo "final_tags=khulnasoft/primeagent:${version},ghcr.io/khulnasoft-bot/primeagent:${version}" >> $GITHUB_OUTPUT
               else
-                echo "final_tags=khulnasoft/primeagent:${version},khulnasoft/primeagent:latest,ghcr.io/khulnasoft/primeagent:${version},ghcr.io/khulnasoft/primeagent:latest" >> $GITHUB_OUTPUT
+                echo "final_tags=khulnasoft/primeagent:${version},khulnasoft/primeagent:latest,ghcr.io/khulnasoft-bot/primeagent:${version},ghcr.io/khulnasoft-bot/primeagent:latest" >> $GITHUB_OUTPUT
               fi
               echo "arch_base=khulnasoft/primeagent:${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent:${version}" >> $GITHUB_OUTPUT
+              ;;
+            "main-backend")
+              if [[ "${{ inputs.pre_release }}" == "true" ]]; then
+                echo "final_tags=khulnasoft/primeagent-backend:${version},ghcr.io/khulnasoft-bot/primeagent-backend:${version}" >> $GITHUB_OUTPUT
+              else
+                echo "final_tags=khulnasoft/primeagent-backend:${version},khulnasoft/primeagent-backend:latest,ghcr.io/khulnasoft-bot/primeagent-backend:${version},ghcr.io/khulnasoft-bot/primeagent-backend:latest" >> $GITHUB_OUTPUT
+              fi
+              echo "arch_base=khulnasoft/primeagent-backend:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-backend:${version}" >> $GITHUB_OUTPUT
+              ;;
+            "main-frontend")
+              if [[ "${{ inputs.pre_release }}" == "true" ]]; then
+                echo "final_tags=khulnasoft/primeagent-frontend:${version},ghcr.io/khulnasoft-bot/primeagent-frontend:${version}" >> $GITHUB_OUTPUT
+              else
+                echo "final_tags=khulnasoft/primeagent-frontend:${version},khulnasoft/primeagent-frontend:latest,ghcr.io/khulnasoft-bot/primeagent-frontend:${version},ghcr.io/khulnasoft-bot/primeagent-frontend:latest" >> $GITHUB_OUTPUT
+              fi
+              echo "arch_base=khulnasoft/primeagent-frontend:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-frontend:${version}" >> $GITHUB_OUTPUT
               ;;
             "main-ep")
-              echo "final_tags=khulnasoft/primeagent-ep:${version},khulnasoft/primeagent-ep:latest,ghcr.io/khulnasoft/primeagent-ep:${version},ghcr.io/khulnasoft/primeagent-ep:latest" >> $GITHUB_OUTPUT
+              echo "final_tags=khulnasoft/primeagent-ep:${version},khulnasoft/primeagent-ep:latest,ghcr.io/khulnasoft-bot/primeagent-ep:${version},ghcr.io/khulnasoft-bot/primeagent-ep:latest" >> $GITHUB_OUTPUT
               echo "arch_base=khulnasoft/primeagent-ep:${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent-ep:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-ep:${version}" >> $GITHUB_OUTPUT
               ;;
             "main-all")
-              echo "final_tags=khulnasoft/primeagent-all:${version},khulnasoft/primeagent-all:latest,ghcr.io/khulnasoft/primeagent-all:${version},ghcr.io/khulnasoft/primeagent-all:latest" >> $GITHUB_OUTPUT
+              echo "final_tags=khulnasoft/primeagent-all:${version},khulnasoft/primeagent-all:latest,ghcr.io/khulnasoft-bot/primeagent-all:${version},ghcr.io/khulnasoft-bot/primeagent-all:latest" >> $GITHUB_OUTPUT
               echo "arch_base=khulnasoft/primeagent-all:${version}" >> $GITHUB_OUTPUT
-              echo "ghcr_arch_base=ghcr.io/khulnasoft/primeagent-all:${version}" >> $GITHUB_OUTPUT
+              echo "ghcr_arch_base=ghcr.io/khulnasoft-bot/primeagent-all:${version}" >> $GITHUB_OUTPUT
               ;;
             *)
               echo "Error: Invalid release_type: ${{ inputs.release_type }}" >&2

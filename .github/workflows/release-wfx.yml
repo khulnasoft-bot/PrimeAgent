@@ -45,7 +45,7 @@ jobs:
       current_version: ${{ steps.check.outputs.current_version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Environment
         uses: astral-sh/setup-uv@v6
@@ -95,7 +95,7 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Environment
         uses: astral-sh/setup-uv@v6
@@ -126,7 +126,7 @@ jobs:
       version: ${{ steps.check-version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Environment
         uses: astral-sh/setup-uv@v6
@@ -209,7 +209,7 @@ jobs:
         variant: [production, alpine]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -250,7 +250,7 @@ jobs:
         with:
           images: |
             khulnasoft/wfx
-            ghcr.io/khulnasoft/wfx
+            ghcr.io/khulnasoft-bot/wfx
           tags: |
             type=raw,value=${{ github.event.inputs.version }}${{ matrix.variant == 'alpine' && '-alpine' || '' }}
             type=raw,value=latest${{ matrix.variant == 'alpine' && '-alpine' || '' }},enable=${{ github.event.inputs.pre_release == 'false' }}
@@ -281,7 +281,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Download artifacts
         uses: actions/download-artifact@v5

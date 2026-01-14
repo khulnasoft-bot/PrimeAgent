@@ -1,5 +1,5 @@
 {
-  "name": "PrimeAgent Dev Container",
+  "name": "Primeagent Dev Container",
   "build": {
     "context": "..",
     "dockerfile": "Dockerfile"

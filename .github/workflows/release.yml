@@ -19,8 +19,8 @@ on:
         type: boolean
         default: false
       release_wfx:
-        description: "WARNING: Not implemented yet."
-        required: true
+        description: "Release WFX package (manually triggered)"
+        required: false
         type: boolean
         default: false
       build_docker_base:
@@ -49,8 +49,6 @@ on:
         type: boolean
         default: true
 
-
-
 jobs:
   echo-inputs:
     name: Echo Workflow Inputs
@@ -73,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Fetch all history - required for tags (?)
       - name: Validate that input is a tag, not a branch
@@ -108,12 +106,6 @@ jobs:
             exit 1
           fi
 
-          if [ "${{ inputs.release_wfx }}" = "true" ]; then
-            echo "Error: Release WFX is not implemented yet."
-            echo "Please disable 'release_wfx' or wait for it to be implemented."
-            exit 1
-          fi
-
           echo "✅ Release dependencies validated successfully."
 
   ci:
@@ -129,10 +121,119 @@ jobs:
       runs-on: ubuntu-latest
     secrets: inherit
 
+  # Automatically ensure wfx is published before building primeagent-base
+  # This job checks if the required wfx version exists on PyPI and publishes it if not
+  ensure-wfx-published:
+    name: Ensure WFX Dependency is Published
+    needs: [ci]
+    if: ${{ inputs.release_package_base }}
+    runs-on: ubuntu-latest
+    outputs:
+      wfx-version: ${{ steps.check-wfx.outputs.wfx_version }}
+      wfx-published: ${{ steps.check-wfx.outputs.already_published }}
+      wfx-published-now: ${{ steps.publish-wfx.outputs.published }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+
+      - name: Setup Environment
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.13"
+          prune-cache: false
+
+      - name: Check WFX version requirement
+        id: check-wfx
+        run: |
+          # Get the wfx version required by primeagent-base from pyproject.toml
+          cd src/backend/base
+          WFX_REQUIREMENT=$(grep -E "^\s*\"wfx" pyproject.toml | head -1 | sed 's/.*wfx[~>=<]*//' | sed 's/[",].*//')
+          echo "WFX requirement from primeagent-base: $WFX_REQUIREMENT"
+
+          # Get the actual wfx version from source
+          cd ../../wfx
+          WFX_SOURCE_VERSION=$(grep -E "^version\s*=" pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "WFX source version: $WFX_SOURCE_VERSION"
+          echo "wfx_version=$WFX_SOURCE_VERSION" >> $GITHUB_OUTPUT
+
+          # Check if this version exists on PyPI
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/wfx/$WFX_SOURCE_VERSION/json")
+
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "✅ WFX version $WFX_SOURCE_VERSION already exists on PyPI"
+            echo "already_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ WFX version $WFX_SOURCE_VERSION NOT found on PyPI (HTTP: $HTTP_STATUS)"
+            echo "Will build and publish WFX first..."
+            echo "already_published=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install WFX dependencies
+        if: steps.check-wfx.outputs.already_published == 'false'
+        run: uv sync --dev --package wfx
+
+      - name: Build WFX
+        if: steps.check-wfx.outputs.already_published == 'false'
+        run: |
+          cd src/wfx
+          rm -rf dist/
+          uv build --wheel --out-dir dist
+          echo "Built WFX wheel:"
+          ls -la dist/
+
+      - name: Test WFX CLI
+        if: steps.check-wfx.outputs.already_published == 'false'
+        run: |
+          cd src/wfx
+          uv pip install dist/*.whl --force-reinstall
+          uv run wfx --help
+          echo "✅ WFX CLI test passed"
+
+      - name: Publish WFX to PyPI
+        id: publish-wfx
+        if: steps.check-wfx.outputs.already_published == 'false' && !inputs.dry_run
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          cd src/wfx
+          echo "Publishing WFX ${{ steps.check-wfx.outputs.wfx_version }} to PyPI..."
+          uv publish dist/*.whl
+          echo "published=true" >> $GITHUB_OUTPUT
+          echo "✅ WFX published successfully"
+
+      - name: Wait for PyPI propagation
+        if: steps.publish-wfx.outputs.published == 'true'
+        run: |
+          echo "Waiting 60 seconds for PyPI propagation..."
+          sleep 60
+
+          # Verify the package is available
+          WFX_VERSION="${{ steps.check-wfx.outputs.wfx_version }}"
+          for i in {1..5}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/wfx/$WFX_VERSION/json")
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "✅ WFX $WFX_VERSION is now available on PyPI"
+              exit 0
+            fi
+            echo "Attempt $i: WFX not yet available (HTTP: $HTTP_STATUS), waiting 30s..."
+            sleep 30
+          done
+          echo "❌ WFX $WFX_VERSION still not available on PyPI after waiting"
+          exit 1
+
+      - name: Skip publishing (dry run)
+        if: steps.check-wfx.outputs.already_published == 'false' && inputs.dry_run
+        run: |
+          echo "⚠️ DRY RUN: Would have published WFX ${{ steps.check-wfx.outputs.wfx_version }} to PyPI"
+          echo "In actual release, this step will publish the package"
 
   build-base:
     name: Build Primeagent Base
-    needs: [ci]
+    needs: [ci, ensure-wfx-published]
     if: ${{ inputs.release_package_base }}
     runs-on: ubuntu-latest
     outputs:
@@ -140,7 +241,7 @@ jobs:
       skipped: ${{ steps.check-version.outputs.skipped }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.release_tag }}
       - name: Setup Environment
@@ -210,7 +311,7 @@ jobs:
       version: ${{ steps.check-version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.release_tag }}
       - name: Setup Environment
@@ -230,7 +331,8 @@ jobs:
       - name: Check if pre-release
         if: inputs.pre_release
         run: |
-          version=$(uv tree | grep 'primeagent' | grep -v 'primeagent-base' | awk '{print $2}' | sed 's/^v//')
+          version="${{ inputs.release_tag }}"
+          echo "$version"
           if [[ "${version}" =~ ^([0-9]+\.)?([0-9]+\.)?[0-9]+((a|b|rc|dev|post)([0-9]+))$ ]]; then
             echo "Pre-release version detected. Continuing with the release."
           else
@@ -281,9 +383,58 @@ jobs:
           name: dist-main
           path: dist
 
+  build-wfx:
+    name: Build WFX
+    needs: [build-base]
+    if: ${{ inputs.release_wfx }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.release_tag }}
+      - name: Setup Environment
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          python-version: "3.13"
+          prune-cache: false
+      - name: Install WFX dependencies
+        run: uv sync --dev --package wfx
+      - name: Check Version
+        id: check-version
+        run: |
+          cd src/wfx
+          version=$(uv tree | grep 'wfx' | head -n 1 | awk '{print $2}' | sed 's/^v//')
+          last_released_version=$(curl -s "https://pypi.org/pypi/wfx/json" | jq -r '.releases | keys | .[]' | sort -V | tail -n 1)
+          if [ "$version" = "$last_released_version" ]; then
+            echo "Version $version is already released. Skipping release."
+            exit 1
+          else
+            echo version=$version >> $GITHUB_OUTPUT
+          fi
+      - name: Build project for distribution
+        run: |
+          cd src/wfx
+          rm -rf dist/
+          uv build --wheel --out-dir dist
+      - name: Test CLI
+        run: |
+          cd src/wfx
+          uv pip install dist/*.whl --force-reinstall
+          uv run wfx --help
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-wfx
+          path: src/wfx/dist
+
   test-cross-platform:
     name: Test Cross-Platform Installation
-    needs: [build-base, build-main, build-wfx]
+    needs: [build-base, build-main]
     if: |
       always() &&
       !cancelled() &&
@@ -293,7 +444,6 @@ jobs:
       base-artifact-name: "dist-base"
       main-artifact-name: "dist-main"
       wfx-artifact-name: "${{ inputs.release_wfx && 'dist-wfx' || '' }}"
-
 
   publish-base:
     name: Publish Primeagent Base to PyPI
@@ -341,84 +491,10 @@ jobs:
         run: |
           uv publish dist/*.whl
 
-  build-wfx:
-    name: Build WFX
-    needs: [build-base]
-    if: ${{ inputs.release_wfx }}
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.check-version.outputs.version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ inputs.release_tag }}
-      - name: Setup Environment
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-          python-version: "3.13"
-          prune-cache: false
-      - name: Install WFX dependencies
-        run: uv sync --dev --package wfx
-      - name: Check Version
-        id: check-version
-        run: |
-          cd src/wfx
-          version=$(uv tree | grep 'wfx' | head -n 1 | awk '{print $2}' | sed 's/^v//')
-          last_released_version=$(curl -s "https://pypi.org/pypi/wfx/json" | jq -r '.releases | keys | .[]' | sort -V | tail -n 1)
-          if [ "$version" = "$last_released_version" ]; then
-            echo "Version $version is already released. Skipping release."
-            exit 1
-          else
-            echo version=$version >> $GITHUB_OUTPUT
-          fi
-      - name: Build project for distribution
-        run: |
-          cd src/wfx
-          rm -rf dist/
-          uv build --wheel --out-dir dist
-      - name: Test CLI
-        run: |
-          cd src/wfx
-          uv pip install dist/*.whl --force-reinstall
-          uv run wfx --help
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-wfx
-          path: src/wfx/dist
-
-  test-wfx-cross-platform:
-    name: Test WFX Cross-Platform Installation
-    if: ${{ inputs.release_wfx }}
-    needs: [build-wfx, test-cross-platform]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-    steps:
-      - name: Download WFX artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: dist-wfx
-          path: dist-wfx
-      - name: Setup Environment
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: false
-          python-version: ${{ matrix.python-version }}
-      - name: Test WFX installation
-        run: |
-          uv pip install dist-wfx/*.whl
-          uv run wfx --help
-
   publish-wfx:
     name: Publish WFX to PyPI
     if: ${{ inputs.release_wfx }}
-    needs: [build-wfx, test-wfx-cross-platform]
+    needs: [build-wfx, test-cross-platform]
     runs-on: ubuntu-latest
     steps:
       - name: Download WFX artifact
@@ -437,6 +513,31 @@ jobs:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           cd src/wfx && uv publish dist/*.whl
+
+  # test-wfx-cross-platform:
+  #   name: Test WFX Cross-Platform Installation
+  #   if: ${{ inputs.release_wfx }}
+  #   needs: [build-wfx]
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest, macos-latest]
+  #       python-version: ["3.10", "3.11", "3.12", "3.13"]
+  #   steps:
+  #     - name: Download WFX artifact
+  #       uses: actions/download-artifact@v5
+  #       with:
+  #         name: dist-wfx
+  #         path: dist-wfx
+  #     - name: Setup Environment
+  #       uses: astral-sh/setup-uv@v6
+  #       with:
+  #         enable-cache: false
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Test WFX installation
+  #       run: |
+  #         uv pip install dist-wfx/*.whl
+  #         uv run wfx --help
 
   call_docker_build_base:
     name: Call Docker Build Workflow for Primeagent Base
@@ -458,6 +559,30 @@ jobs:
     with:
       ref: ${{ inputs.release_tag }}
       release_type: main
+      pre_release: ${{ inputs.pre_release }}
+      push_to_registry: ${{ !inputs.dry_run }}
+    secrets: inherit
+
+  call_docker_build_main_backend:
+    name: Call Docker Build Workflow for Primeagent Backend
+    if: ${{ inputs.build_docker_main && !inputs.dry_run }}
+    needs: [call_docker_build_main]
+    uses: ./.github/workflows/docker-build-v2.yml
+    with:
+      ref: ${{ inputs.release_tag }}
+      release_type: main-backend
+      pre_release: ${{ inputs.pre_release }}
+      push_to_registry: ${{ !inputs.dry_run }}
+    secrets: inherit
+
+  call_docker_build_main_frontend:
+    name: Call Docker Build Workflow for Primeagent Frontend
+    if: ${{ inputs.build_docker_main && !inputs.dry_run }}
+    needs: [call_docker_build_main]
+    uses: ./.github/workflows/docker-build-v2.yml
+    with:
+      ref: ${{ inputs.release_tag }}
+      release_type: main-frontend
       pre_release: ${{ inputs.pre_release }}
       push_to_registry: ${{ !inputs.dry_run }}
     secrets: inherit
@@ -485,8 +610,6 @@ jobs:
       pre_release: ${{ inputs.pre_release }}
       push_to_registry: ${{ !inputs.dry_run }}
     secrets: inherit
-
-
 
   create_release:
     name: Create Release

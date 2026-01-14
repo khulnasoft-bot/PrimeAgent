@@ -10,7 +10,7 @@ on:
         options:
           - ubuntu-latest
           - self-hosted
-          - "[self-hosted, linux, ARM64, khulnasoft-arm64-40gb]"
+          - "[self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]"
         default: ubuntu-latest
       skip_frontend_tests:
         description: "Skip frontend tests. Only do this for testing purposes."
@@ -19,6 +19,11 @@ on:
         default: false
       skip_backend_tests:
         description: "Skip backend tests. Only do this for testing purposes."
+        required: false
+        type: boolean
+        default: false
+      skip_slack:
+        description: "Skip slack message on failure. Only do this for testing purposes."
         required: false
         type: boolean
         default: false
@@ -46,7 +51,7 @@ jobs:
           exit 1
 
   create-nightly-tag:
-    if: github.repository == 'khulnasoft/primeagent'
+    if: github.repository == 'khulnasoft-bot/primeagent'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,7 +65,7 @@ jobs:
       wfx_tag: ${{ steps.generate_wfx_tag.outputs.wfx_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: true
       - name: "Setup Environment"
@@ -110,7 +115,7 @@ jobs:
         run: |
           # If the main tag does not exist in GH, we create the base tag from the existing codebase.
 
-          git config --global user.email "bot-nightly-builds@primeagent.khulnasoft.com"
+          git config --global user.email "bot-nightly-builds@khulnasoft.com"
           git config --global user.name "Primeagent Bot"
 
           MAIN_TAG="${{ steps.generate_main_tag.outputs.main_tag }}"
@@ -119,11 +124,10 @@ jobs:
           echo "Updating WFX project version to $WFX_TAG"
           uv run ./scripts/ci/update_wfx_version.py $WFX_TAG
           echo "Updating base project version to $BASE_TAG and updating main project version to $MAIN_TAG"
-          uv run ./scripts/ci/update_pyproject_combined.py main $MAIN_TAG $BASE_TAG $WFX_TAG
+          uv run --no-sync ./scripts/ci/update_pyproject_combined.py main $MAIN_TAG $BASE_TAG $WFX_TAG
 
           uv lock
           cd src/backend/base && uv lock && cd ../../..
-          cd src/wfx && uv lock && cd ../..
 
           git add pyproject.toml src/backend/base/pyproject.toml src/wfx/pyproject.toml uv.lock src/backend/base/uv.lock
           git commit -m "Update version and project name"
@@ -142,7 +146,7 @@ jobs:
           # TODO: notify on failure
 
       - name: Checkout main nightly tag
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.generate_main_tag.outputs.main_tag }}
 
@@ -172,7 +176,7 @@ jobs:
           fi
 
   frontend-tests:
-    if: github.repository == 'khulnasoft/primeagent' && !inputs.skip_frontend_tests
+    if: github.repository == 'khulnasoft-bot/primeagent' && !inputs.skip_frontend_tests
     name: Run Frontend Tests
     needs: create-nightly-tag
     uses: ./.github/workflows/typescript_test.yml
@@ -187,7 +191,7 @@ jobs:
       TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
 
   backend-unit-tests:
-    if: github.repository == 'khulnasoft/primeagent' && !inputs.skip_backend_tests
+    if: github.repository == 'khulnasoft-bot/primeagent' && !inputs.skip_backend_tests
     name: Run Backend Unit Tests
     needs: create-nightly-tag
     uses: ./.github/workflows/python_test.yml
@@ -200,7 +204,7 @@ jobs:
 
   # Not making nightly builds dependent on integration test success
   # due to inherent flakiness of 3rd party integrations
-  # Revisit when https://github.com/khulnasoft/primeagent/pull/3607 is merged.
+  # Revisit when https://github.com/khulnasoft-bot/primeagent/pull/3607 is merged.
   # backend-integration-tests:
   #   name: Run Backend Integration Tests
   #   needs: create-nightly-tag
@@ -210,7 +214,7 @@ jobs:
   #     ref: ${{ needs.create-nightly-tag.outputs.tag }}
 
   release-nightly-build:
-    if: github.repository == 'khulnasoft/primeagent' && (needs.frontend-tests.result == 'success' || needs.frontend-tests.result == 'skipped') && (needs.backend-unit-tests.result == 'success' || needs.backend-unit-tests.result == 'skipped')
+    if: github.repository == 'khulnasoft-bot/primeagent' && always() && needs.frontend-tests.result != 'failure' && needs.backend-unit-tests.result != 'failure'
     name: Run Nightly Primeagent Build
     needs: [create-nightly-tag, frontend-tests, backend-unit-tests]
     uses: ./.github/workflows/release_nightly.yml
@@ -229,12 +233,12 @@ jobs:
 
   slack-notification:
     name: Send Slack Notification
-    needs: release-nightly-build
-    if: ${{ github.repository == 'khulnasoft/primeagent' && always() }}
+    needs: [frontend-tests, backend-unit-tests, release-nightly-build]
+    if: ${{ github.repository == 'khulnasoft-bot/primeagent' && !inputs.skip_slack && always() && (needs.release-nightly-build.result == 'failure' || needs.frontend-tests.result == 'failure' || needs.backend-unit-tests.result == 'failure' || needs.release-nightly-build.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Send failure notification to Slack
-        if: ${{ needs.release-nightly-build.result == 'failure' }}
+        if: ${{ needs.release-nightly-build.result == 'failure' || needs.frontend-tests.result == 'failure' || needs.backend-unit-tests.result == 'failure' }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{

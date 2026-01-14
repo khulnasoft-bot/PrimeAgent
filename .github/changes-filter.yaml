@@ -8,8 +8,10 @@ python:
   - "src/backend/base/uv.lock"
   - "**/python_test.yml"
   - ".github/workflows/ci.yml"
+  - "src/wfx/src/wfx/_assets/component_index.json"
 components-changes:
   - "src/backend/base/primeagent/components/**"
+  - "src/wfx/src/wfx/_assets/component_index.json"
 starter-projects-changes:
   - "src/backend/base/primeagent/initial_setup/**"
 frontend-tests:
@@ -19,6 +21,7 @@ frontend:
   - "**/typescript_test.yml"
   - "**/jest_test.yml"
   - ".github/workflows/ci.yml"
+  - "src/wfx/src/wfx/_assets/component_index.json"
 docs:
   - "docs/**"
 docker:
@@ -66,6 +69,7 @@ components:
   - "src/backend/base/primeagent/components/**"
   - "src/backend/base/primeagent/initial_setup/**"
   - "src/backend/base/primeagent/serialization/**"
+  - "src/wfx/src/wfx/_assets/component_index.json"
 
 workspace:
   - "src/backend/base/primeagent/inputs/**"

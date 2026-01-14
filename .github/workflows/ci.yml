@@ -58,7 +58,7 @@ on:
         options:
           - ubuntu-latest
           - self-hosted
-          - "[self-hosted, linux, ARM64, khulnasoft-arm64-40gb]"
+          - "[self-hosted, linux, ARM64, khulnasoft-bot-arm64-40gb]"
         default: ubuntu-latest
   pull_request:
     types: [opened, synchronize, labeled]
@@ -203,7 +203,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.ref }}
       - name: Filter Paths
@@ -311,7 +311,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.ref }}
 

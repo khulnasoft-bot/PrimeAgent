@@ -2,7 +2,7 @@
 
 These instructions will walk you through the process of running a Primeagent demo via GitHub Codespaces.
 
-If you want a faster and easier demo experience with Primeagent, download and install [Primeagent Desktop](https://docs.khulnasoft.com/get-started-installation#install-and-run-primeagent-desktop) for the least complicated setup experience.
+If you want a faster and easier demo experience with Primeagent, download and install [Primeagent Desktop](https://docs-primeagent.khulnasoft.com/get-started-installation#install-and-run-primeagent-desktop) for the least complicated setup experience.
 
 ## Create a Codespace in GitHub
 
@@ -47,7 +47,8 @@ The service will start, and you will may notice a dialog in the lower right indi
 ╭───────────────────────────────────────────────────────────────────────╮
 │ Welcome to Primeagent                                                   │
 │                                                                       │
-│ 🌟 GitHub: Star for updates → │
+│ 🌟 GitHub: Star for updates → https://github.com/khulnasoft-bot/primeagent  │
+│ 💬 Discord: Join for support → https://discord.com/invite/EqksyE2EX9   │
 │                                                                       │
 │ We collect anonymous usage data to improve Primeagent.                  │
 │ To opt out, set: DO_NOT_TRACK=true in your environment.               │
@@ -56,4 +57,4 @@ The service will start, and you will may notice a dialog in the lower right indi
 ╰───────────────────────────────────────────────────────────────────────╯
 ```
 
-At this point you can connect to the service via the port, or if the dialog is gone you can find the "Forwarded Address" on the "Ports" tab (which is next the "Terminal" tab). If there is no port forwarded, you can https://github.com/khulnasoft/primeagent
+At this point you can connect to the service via the port, or if the dialog is gone you can find the "Forwarded Address" on the "Ports" tab (which is next the "Terminal" tab). If there is no port forwarded, you can click the "Forward a Port" button on the "Ports" tab, and forward `7860`.
