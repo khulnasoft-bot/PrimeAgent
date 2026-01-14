@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+    rev: v5.0.0
     hooks:
       - id: check-case-conflict
       - id: end-of-file-fixer
@@ -25,15 +25,36 @@ repos:
         language: system
         types_or: [python, pyi]
         args: [--config, pyproject.toml]
+      - id: validate-migrations
+        name: Validate Alembic Migrations (Expand-Contract)
+        entry: python src/backend/base/primeagent/alembic/migration_validator.py
+        language: python
+        files: (alembic|migrations)/versions/.*\.py$
+        additional_dependencies: [sqlalchemy, alembic]
+        pass_filenames: true
+        always_run: false
+        verbose: true
+      - id: check-migration-phase
+        name: Check Migration Phase Documentation
+        entry: python -c "import sys, re; content = open(sys.argv[1]).read(); sys.exit(0 if re.search(r'Phase:\s*(EXPAND|MIGRATE|CONTRACT)', content) else 1)"
+        language: python
+        files: (alembic|migrations)/versions/.*\.py$
+        pass_filenames: true
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: '(^docs/|^SECURITY\.md$|src/wfx/src/wfx/_assets/component_index\.json$)'
   - repo: local
     hooks:
       - id: local-biome-check
         name: biome check
-        # Run biome check if npx is available, otherwise skip gracefully to avoid blocking commits
-        entry: bash -c 'cd src/frontend && files=("${@#src/frontend/}") && npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched --diagnostic-level=error "${files[@]}"' --
+        entry: bash -c 'cd src/frontend && files=("${@#src/frontend/}") && npx @biomejs/biome check --write --files-ignore-unknown=true --diagnostic-level=error "${files[@]}"' --
         language: system
         types: [text]
         files: "^src/frontend/.*\\.(jsx?|tsx?|c(js|ts)|m(js|ts)|d\\.(ts|cts|mts)|jsonc?)$"
+        exclude: (^docs/|src/wfx/src/wfx/_assets/component_index\.json$)
         pass_filenames: true
       - id: biome-lint-no-any-staged
         name: biome no-any check (staged only)
@@ -49,3 +70,9 @@ repos:
         files: ^src/backend/base/primeagent/initial_setup/starter_projects/.*\.json$
         pass_filenames: false
         args: [--security-check]
+      - id: check-deprecated-imports
+        name: Check for deprecated langchain imports
+        entry: uv run python scripts/check_deprecated_imports.py
+        language: system
+        files: ^src/wfx/src/wfx/components/.*\.py$
+        pass_filenames: false
